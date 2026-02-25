@@ -2,44 +2,34 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { BidStatus } from "./data"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }
+
+export function formatCurrency(v: number): string {
+  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v)
 }
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(value)
+export function formatDate(d: string): string {
+  return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
+export function formatDateShort(d: string): string {
+  return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
 }
 
-export function daysUntil(dateStr: string): number {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const deadline = new Date(dateStr)
-  deadline.setHours(0, 0, 0, 0)
-  return Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+export function daysUntil(d: string): number {
+  const today = new Date(); today.setHours(0,0,0,0)
+  const dl = new Date(d); dl.setHours(0,0,0,0)
+  return Math.ceil((dl.getTime() - today.getTime()) / 86400000)
 }
 
-export function statusLabel(status: BidStatus): string {
-  const labels: Record<BidStatus, string> = {
-    active: 'Active',
-    sent: 'Sent',
-    won: 'Won',
-    lost: 'Lost',
-    'no-bid': 'No Bid',
-  }
-  return labels[status]
+export function statusLabel(s: BidStatus): string {
+  return { active: 'Active', sent: 'Sent', won: 'Won', lost: 'Lost', 'no-bid': 'No Bid' }[s]
 }
 
-export function statusColor(status: BidStatus): string {
-  const colors: Record<BidStatus, string> = {
-    active: 'bg-blue-100 text-blue-800 border-blue-200',
-    sent: 'bg-amber-100 text-amber-800 border-amber-200',
-    won: 'bg-green-100 text-green-800 border-green-200',
-    lost: 'bg-red-100 text-red-800 border-red-200',
-    'no-bid': 'bg-gray-100 text-gray-600 border-gray-200',
-  }
-  return colors[status]
+export const STATUS_COLOR: Record<BidStatus, string> = {
+  active:   '#4a6fa8',
+  sent:     '#c4963a',
+  won:      '#5a7a5a',
+  lost:     '#b85042',
+  'no-bid': '#b5afa5',
 }

@@ -1,49 +1,50 @@
 import { CLIENTS, BIDS } from "@/lib/data"
 import { formatCurrency } from "@/lib/utils"
-import { Building2, Phone, Mail } from "lucide-react"
+import { StatusDot } from "@/components/StatusDot"
+import Link from "next/link"
 
 export default function ClientsPage() {
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-        <p className="text-sm text-gray-500 mt-1">{CLIENTS.length} clients on record</p>
+    <div style={{ maxWidth: "960px" }}>
+      <div style={{ marginBottom: "2.5rem" }}>
+        <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>{CLIENTS.length} clients</p>
+        <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>Clients</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {CLIENTS.map(client => {
-          const clientBids = BIDS.filter(b => b.client === client.name)
+      <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+        {CLIENTS.map((client, i) => {
+          const clientBids = BIDS.filter(b => b.client_id === client.id)
           const won = clientBids.filter(b => b.status === 'won')
-          const totalWon = won.reduce((s, b) => s + b.bid_value, 0)
-          const winRate = clientBids.filter(b => b.status === 'won' || b.status === 'lost').length > 0
-            ? Math.round(won.length / clientBids.filter(b => b.status === 'won' || b.status === 'lost').length * 100)
-            : null
+          const decided = clientBids.filter(b => ['won','lost'].includes(b.status))
+          const totalWon = won.reduce((s,b) => s + b.bid_value, 0)
+          const winRate = decided.length > 0 ? Math.round(won.length / decided.length * 100) : null
+          const recent = clientBids.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0,2)
 
           return (
-            <div key={client.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <Building2 size={18} className="text-gray-500" />
-                </div>
+            <div key={client.id} style={{ background: "var(--bg)", borderBottom: i < CLIENTS.length - 1 ? "1px solid var(--border)" : "none", padding: "1.5rem 1.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                 <div>
-                  <div className="font-semibold text-gray-900">{client.name}</div>
-                  <div className="text-sm text-gray-500">{client.contact_name}</div>
+                  <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)", marginBottom: "0.2rem" }}>{client.name}</p>
+                  <p style={{ fontSize: "13px", color: "var(--ink-muted)" }}>{client.contact_name} · <a href={`mailto:${client.email}`} style={{ color: "var(--terra)", textDecoration: "none" }}>{client.email}</a> · {client.phone}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatCurrency(totalWon)}</p>
+                  <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.15rem" }}>
+                    {clientBids.length} bid{clientBids.length !== 1 ? 's' : ''}
+                    {winRate !== null ? ` · ${winRate}% win` : ''}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-8 text-sm">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <Mail size={14} />
-                  <span className="text-gray-600">{client.email}</span>
+              {recent.length > 0 && (
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {recent.map(bid => (
+                    <Link key={bid.id} href={`/bids/${bid.id}`} style={{ fontSize: "12px", padding: "3px 10px", borderRadius: "20px", background: "var(--bg-subtle)", border: "1px solid var(--border)", color: "var(--ink-muted)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                      <StatusDot status={bid.status} showLabel={false} />
+                      {bid.project_name}
+                    </Link>
+                  ))}
                 </div>
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <Phone size={14} />
-                  <span className="text-gray-600">{client.phone}</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-gray-900">{formatCurrency(totalWon)}</div>
-                  <div className="text-xs text-gray-400">{clientBids.length} bids{winRate != null ? ` · ${winRate}% win rate` : ''}</div>
-                </div>
-              </div>
+              )}
             </div>
           )
         })}

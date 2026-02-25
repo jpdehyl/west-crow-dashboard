@@ -1,9 +1,31 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { CLIENTS } from "@/lib/data"
+import Link from "next/link"
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.7rem 1rem",
+  background: "var(--bg)",
+  border: "1px solid var(--border)",
+  borderRadius: "8px",
+  fontSize: "14px",
+  color: "var(--ink)",
+  outline: "none",
+  fontFamily: "inherit",
+  appearance: "none" as const,
+}
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: 500,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--ink-faint)",
+  marginBottom: "0.5rem",
+}
 
 export default function NewBidPage() {
   const router = useRouter()
@@ -13,66 +35,152 @@ export default function NewBidPage() {
     e.preventDefault()
     setLoading(true)
     // TODO: POST to API route → Google Sheets
-    await new Promise(r => setTimeout(r, 800))
+    await new Promise(r => setTimeout(r, 900))
     setLoading(false)
     router.push("/bids")
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Link href="/bids" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-        <ArrowLeft size={14} /> Back to Bids
+    <div style={{ maxWidth: "640px" }}>
+      <Link href="/bids" style={{
+        fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none",
+        display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1.75rem",
+      }}>
+        ← Pipeline
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">New Bid</h1>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Project Name <span className="text-red-400">*</span></label>
-            <input required name="project_name" type="text" placeholder="e.g. Burnaby Office Demo" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+      <div style={{ marginBottom: "2.5rem" }}>
+        <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
+          West Crow Contracting
+        </p>
+        <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          New Bid
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+
+          {/* Project name */}
+          <div style={{ padding: "1.5rem 1.75rem", borderBottom: "1px solid var(--border)" }}>
+            <label style={labelStyle}>
+              Project Name <span style={{ color: "var(--terra)" }}>*</span>
+            </label>
+            <input
+              required
+              name="project_name"
+              type="text"
+              placeholder="e.g. Burnaby Office Demolition"
+              style={inputStyle}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Client + Estimator */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Client <span className="text-red-400">*</span></label>
-              <select required name="client" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+              <label style={labelStyle}>Client <span style={{ color: "var(--terra)" }}>*</span></label>
+              <select required name="client" style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="">Select client…</option>
                 {CLIENTS.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 <option value="__new">+ New client</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Estimator</label>
-              <select name="estimator" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+              <label style={labelStyle}>Estimator</label>
+              <select name="estimator" style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="JP">JP</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Value + Deadline */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Bid Value (CAD) <span className="text-red-400">*</span></label>
-              <input required name="bid_value" type="number" min="0" step="500" placeholder="150000" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              <label style={labelStyle}>Bid Value (CAD) <span style={{ color: "var(--terra)" }}>*</span></label>
+              <input
+                required
+                name="bid_value"
+                type="number"
+                min="0"
+                step="500"
+                placeholder="150000"
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Bid Deadline <span className="text-red-400">*</span></label>
-              <input required name="deadline" type="date" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition" />
+              <label style={labelStyle}>Bid Deadline <span style={{ color: "var(--terra)" }}>*</span></label>
+              <input
+                required
+                name="deadline"
+                type="date"
+                style={inputStyle}
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
-            <textarea name="notes" rows={3} placeholder="Scope summary, special conditions, subcontractors…" className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition resize-none" />
+          {/* Source */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
+            <div>
+              <label style={labelStyle}>Source</label>
+              <select name="source" style={{ ...inputStyle, cursor: "pointer" }}>
+                <option value="email">Email invitation</option>
+                <option value="referral">Referral</option>
+                <option value="repeat">Repeat client</option>
+                <option value="tender">Public tender</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>BuilderTrend ID</label>
+              <input
+                name="buildertrend_id"
+                type="text"
+                placeholder="Optional"
+                style={inputStyle}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Link href="/bids" className="text-sm text-gray-500 hover:text-gray-800 px-4 py-2.5 rounded-lg transition">Cancel</Link>
-            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
-              {loading ? "Saving…" : "Save Bid"}
-            </button>
+          {/* Notes */}
+          <div style={{ padding: "1.5rem 1.75rem" }}>
+            <label style={labelStyle}>Notes</label>
+            <textarea
+              name="notes"
+              rows={3}
+              placeholder="Scope summary, special conditions, subcontractors, hazmat flags…"
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.65 }}
+            />
           </div>
-        </form>
-      </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
+          <Link href="/bids" style={{
+            fontSize: "13px", color: "var(--ink-muted)", padding: "0.65rem 1.25rem",
+            borderRadius: "8px", textDecoration: "none",
+          }}>
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: "0.65rem 1.75rem",
+              background: loading ? "var(--ink-faint)" : "var(--ink)",
+              color: "var(--bg)",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              letterSpacing: "0.01em",
+            }}
+          >
+            {loading ? "Saving…" : "Save Bid"}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

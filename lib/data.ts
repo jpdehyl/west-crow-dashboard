@@ -80,6 +80,7 @@ export const CLIENTS: Client[] = [
   { id: 'c4', name: 'Starlight Hotel Group',      contact_name: 'Angela Park',    email: 'apark@starlighthg.com',     phone: '604-555-0199', type: 'commercial' },
   { id: 'c5', name: 'Apex Construction',          contact_name: 'Derek Simms',    email: 'derek@apexconstruction.ca', phone: '604-555-0131', type: 'commercial' },
   { id: 'c6', name: 'Street Level Contracting',   contact_name: 'Ryan Hooper',    email: 'ryan@streetlevel.ca',       phone: '604-555-0177', type: 'commercial' },
+  { id: 'c7', name: 'Metro Vancouver Schools',    contact_name: 'Diane Patel',    email: 'dpatel@vsb.bc.ca',          phone: '604-555-0214', type: 'commercial' },
 ]
 
 export const BIDS: Bid[] = [
@@ -200,9 +201,61 @@ export const BIDS: Bid[] = [
       { name: 'Architectural Drawings', url: 'https://buildertrend.net', type: 'drawings' },
     ],
   },
+  {
+    id: 'b7',
+    project_name: 'Burnaby Secondary Abatement',
+    client: 'Metro Vancouver Schools',
+    client_id: 'c7',
+    bid_value: 195000,
+    deadline: '2026-02-10',
+    status: 'won',
+    margin_pct: 29,
+    estimator: 'JP',
+    notes: 'Asbestos abatement — 3 floors, occupied building. Must coordinate with school calendar. PO issued.',
+    created_at: '2026-01-28T09:00:00Z',
+    timeline: [
+      { stage: 'invited',    date: '2026-01-28', by: 'Ean', note: 'RFP received via VSB procurement portal' },
+      { stage: 'estimating', date: '2026-01-30', by: 'JP',  note: 'Hazmat report reviewed, takeoff complete' },
+      { stage: 'submitted',  date: '2026-02-05', by: 'JP',  note: 'Bid submitted $195,000' },
+      { stage: 'decision',   date: '2026-02-14', by: 'JP',  note: 'WON — lowest compliant bid. PO issued.' },
+    ],
+    documents: [
+      { name: 'Hazmat Report', url: 'https://buildertrend.net', type: 'hazmat' },
+      { name: 'Signed Contract', url: 'https://buildertrend.net', type: 'bid_docs' },
+    ],
+  },
 ]
 
 export const PROJECTS: Project[] = [
+  {
+    id: 'p2',
+    bid_id: 'b7',
+    project_name: 'Burnaby Secondary Abatement',
+    client: 'Metro Vancouver Schools',
+    client_id: 'c7',
+    contract_value: 195000,
+    start_date: '2026-02-17',
+    end_date: '2026-03-14',
+    status: 'active',
+    estimator: 'JP',
+    estimate_total: 195000,
+    budget_labour: 110000,
+    budget_materials: 18000,
+    budget_subs: 28000,
+    daily_logs: [
+      { id: 'dl4', date: '2026-02-17', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Site setup, decon unit installed. Access to Level 1 confirmed with school facilities.', weather: 'Clear' },
+      { id: 'dl5', date: '2026-02-18', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Floor tile removal Level 1 — 1,800 SF completed. Bulk waste staged at loading dock.', weather: 'Clear' },
+      { id: 'dl6', date: '2026-02-19', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Ceiling tiles Level 1 (900 SF). HEPA vacuuming ongoing. Air clearance test passed.', weather: 'Rain' },
+      { id: 'dl7', date: '2026-02-20', crew: ['Oscar', 'Crew x4'], hours: 40, work_performed: 'Level 2 containment setup. VCT removal started — 900 SF complete, 900 SF remaining.', weather: 'Overcast' },
+    ],
+    costs: [
+      { id: 'cost6', date: '2026-02-17', description: 'Oscar — 4 days', amount: 3360, category: 'labour', vendor: 'Oscar Morales' },
+      { id: 'cost7', date: '2026-02-17', description: 'Crew × 3 — 4 days', amount: 9720, category: 'labour', vendor: '24/7 Workforce' },
+      { id: 'cost8', date: '2026-02-19', description: 'Decon unit rental', amount: 2200, category: 'equipment', vendor: 'Sunbelt Rentals' },
+      { id: 'cost9', date: '2026-02-20', description: 'Abatement bags + PPE', amount: 1800, category: 'materials', vendor: 'SafeGuard Supply' },
+      { id: 'cost10', date: '2026-02-20', description: 'Air quality testing', amount: 1400, category: 'subcontractor', vendor: 'EcoTest Environmental' },
+    ],
+  },
   {
     id: 'p1',
     bid_id: 'b3',

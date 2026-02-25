@@ -15,7 +15,7 @@ export default function ProjectsPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {PROJECTS.map(project => {
           const totalCosts = project.costs.reduce((s,c) => s + c.amount, 0)
-          const budgetTotal = project.budget_labour + project.budget_materials + project.budget_subs
+          const budgetTotal = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
           const budgetPct = Math.round((totalCosts / budgetTotal) * 100)
 
           const startDate = new Date(project.start_date)

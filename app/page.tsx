@@ -1,4 +1,4 @@
-import { BIDS } from "@/lib/data"
+import { BIDS, PROJECTS } from "@/lib/data"
 import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
 import Link from "next/link"
 
@@ -116,6 +116,86 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* ── ON SITE ── */}
+        {(() => {
+          const today = new Date(); today.setHours(0,0,0,0)
+          const onSite = PROJECTS.filter(p => {
+            const start = new Date(p.start_date); start.setHours(0,0,0,0)
+            const end   = new Date(p.end_date);   end.setHours(0,0,0,0)
+            return p.status === 'active' && start <= today
+          })
+          if (onSite.length === 0) return null
+          return (
+            <div style={{ marginBottom: "3rem" }}>
+              <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "1rem" }}>
+                On Site
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                {onSite.map((project, i) => {
+                  const spent    = project.costs.reduce((s,c) => s + c.amount, 0)
+                  const budget   = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
+                  const pct      = Math.round(spent / budget * 100)
+                  const startD   = new Date(project.start_date); startD.setHours(0,0,0,0)
+                  const endD     = new Date(project.end_date);   endD.setHours(0,0,0,0)
+                  const totalD   = Math.ceil((endD.getTime() - startD.getTime()) / 86400000)
+                  const elapsed  = Math.ceil((today.getTime() - startD.getTime()) / 86400000)
+                  const daysLeft = Math.max(0, Math.ceil((endD.getTime() - today.getTime()) / 86400000))
+                  const timePct  = Math.round(Math.min(elapsed / totalD, 1) * 100)
+                  const isLast   = i === onSite.length - 1
+
+                  return (
+                    <Link key={project.id} href={`/projects/${project.id}`}
+                      className="row-hover"
+                      style={{
+                        display: "block",
+                        padding: "1rem 0",
+                        textDecoration: "none",
+                        borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+                        <div>
+                          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{project.project_name}</span>
+                          <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.75rem" }}>{project.client}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexShrink: 0 }}>
+                          <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Day {elapsed} · {daysLeft}d left</span>
+                          <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
+                            {formatCurrency(project.contract_value)}
+                          </span>
+                          <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 7px", borderRadius: "4px" }}>
+                            ● Active
+                          </span>
+                        </div>
+                      </div>
+                      {/* Dual progress bars */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Budget</span>
+                            <span style={{ fontSize: "10px", color: pct > 85 ? "var(--terra)" : "var(--ink-faint)", fontWeight: pct > 85 ? 600 : 400 }}>{pct}%</span>
+                          </div>
+                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.min(pct,100)}%`, background: pct > 85 ? "var(--terra)" : "var(--sage)", borderRadius: 2 }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Timeline</span>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)" }}>{timePct}%</span>
+                          </div>
+                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${timePct}%`, background: "var(--gold)", borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Urgent bids */}
         {urgent.length > 0 && (

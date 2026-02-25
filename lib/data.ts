@@ -32,6 +32,20 @@ export interface DailyLog {
   work_performed: string
   notes?: string
   weather?: string
+  issues?: string
+  photos?: number
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  type: 'progress' | 'final'
+  gross_amount: number
+  holdback_pct: number
+  sent_date?: string
+  paid_date?: string
+  holdback_release_date?: string
+  notes?: string
 }
 
 export interface Cost {
@@ -54,12 +68,18 @@ export interface Project {
   end_date: string
   status: 'active' | 'complete' | 'on-hold'
   estimator: string
+  superintendent?: string
+  po_number?: string
+  contract_signed_date?: string
   budget_labour: number
   budget_materials: number
+  budget_equipment: number
   budget_subs: number
   daily_logs: DailyLog[]
   costs: Cost[]
   estimate_total: number
+  invoices?: Invoice[]
+  close_notes?: string
 }
 
 export interface Client {
@@ -238,22 +258,66 @@ export const PROJECTS: Project[] = [
     end_date: '2026-03-14',
     status: 'active',
     estimator: 'JP',
+    superintendent: 'Oscar',
+    po_number: 'VSB-2026-0089',
+    contract_signed_date: '2026-02-15',
     estimate_total: 195000,
     budget_labour: 110000,
     budget_materials: 18000,
+    budget_equipment: 12000,
     budget_subs: 28000,
     daily_logs: [
-      { id: 'dl4', date: '2026-02-17', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Site setup, decon unit installed. Access to Level 1 confirmed with school facilities.', weather: 'Clear' },
-      { id: 'dl5', date: '2026-02-18', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Floor tile removal Level 1 — 1,800 SF completed. Bulk waste staged at loading dock.', weather: 'Clear' },
-      { id: 'dl6', date: '2026-02-19', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Ceiling tiles Level 1 (900 SF). HEPA vacuuming ongoing. Air clearance test passed.', weather: 'Rain' },
-      { id: 'dl7', date: '2026-02-20', crew: ['Oscar', 'Crew x4'], hours: 40, work_performed: 'Level 2 containment setup. VCT removal started — 900 SF complete, 900 SF remaining.', weather: 'Overcast' },
+      {
+        id: 'dl4', date: '2026-02-17', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Clear', photos: 6,
+        work_performed: 'Site mobilization complete. Decon unit installed at east loading dock. Level 1 access confirmed with VSB facilities manager. Safety signage posted, perimeter tape up.',
+      },
+      {
+        id: 'dl5', date: '2026-02-18', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Clear', photos: 11,
+        work_performed: 'Floor tile (VCT) removal Level 1 — 1,800 SF completed. Bulk waste double-bagged and staged at loading dock. Mastic residue under tile — will require grinding before flooring.',
+      },
+      {
+        id: 'dl6', date: '2026-02-19', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Rain', photos: 8,
+        work_performed: 'Ceiling tile removal Level 1 — 900 SF complete. HEPA vacuuming of ceiling grid. Air clearance test #1 passed (0.01 f/cc). Level 1 sign-off ready for environmental.',
+        issues: 'Air monitoring showed slightly elevated asbestos fibers (0.04 f/cc) in Level 1 south corridor at 10:00 AM. Crew cleared area, additional containment installed. Re-test at 2:00 PM cleared (0.01 f/cc). No stoppage, no delay to schedule.',
+      },
+      {
+        id: 'dl7', date: '2026-02-20', crew: ['Oscar', 'Crew ×4'], hours: 40, weather: 'Overcast', photos: 9,
+        work_performed: 'Level 2 containment fully erected. VCT removal started — 900 SF complete, 900 SF remaining. Level 1 waste disposal (Load 1) — CleanHaul took 2 bins.',
+      },
+      {
+        id: 'dl8', date: '2026-02-23', crew: ['Oscar', 'Crew ×4'], hours: 40, weather: 'Clear', photos: 7,
+        work_performed: 'VCT removal Level 2 complete (1,800 SF total). Mastic grinding Level 1 completed by sub. Air clearance test #2 — Level 2 passed. Ceiling tiles Level 2 started.',
+      },
+      {
+        id: 'dl9', date: '2026-02-24', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Clear', photos: 5,
+        work_performed: 'Ceiling tiles Level 2 complete (900 SF). HEPA vacuuming. Level 3 entry assessment done with VSB — no additional hazmat found beyond original scope. Efficient day.',
+      },
+      {
+        id: 'dl10', date: '2026-02-25', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Overcast', photos: 4,
+        work_performed: 'Level 3 containment setup. VCT removal Level 3 started — 600 SF complete out of 1,800 SF. On pace to complete Level 3 removal by Feb 27.',
+      },
     ],
     costs: [
-      { id: 'cost6', date: '2026-02-17', description: 'Oscar — 4 days', amount: 3360, category: 'labour', vendor: 'Oscar Morales' },
-      { id: 'cost7', date: '2026-02-17', description: 'Crew × 3 — 4 days', amount: 9720, category: 'labour', vendor: '24/7 Workforce' },
-      { id: 'cost8', date: '2026-02-19', description: 'Decon unit rental', amount: 2200, category: 'equipment', vendor: 'Sunbelt Rentals' },
-      { id: 'cost9', date: '2026-02-20', description: 'Abatement bags + PPE', amount: 1800, category: 'materials', vendor: 'SafeGuard Supply' },
-      { id: 'cost10', date: '2026-02-20', description: 'Air quality testing', amount: 1400, category: 'subcontractor', vendor: 'EcoTest Environmental' },
+      { id: 'cost6',  date: '2026-02-17', description: 'Oscar — Week 1 (5 days)', amount: 4200, category: 'labour', vendor: 'Oscar Morales' },
+      { id: 'cost7',  date: '2026-02-17', description: 'Crew ×3 — Week 1 (5 days)', amount: 10800, category: 'labour', vendor: '24/7 Workforce' },
+      { id: 'cost8',  date: '2026-02-17', description: 'Decon unit rental (4 weeks)', amount: 3200, category: 'equipment', vendor: 'Sunbelt Rentals' },
+      { id: 'cost9',  date: '2026-02-18', description: 'HEPA vacuums ×2 rental (4 wks)', amount: 2400, category: 'equipment', vendor: 'Sunbelt Rentals' },
+      { id: 'cost10', date: '2026-02-19', description: 'Abatement bags, poly, PPE', amount: 2200, category: 'materials', vendor: 'SafeGuard Supply' },
+      { id: 'cost11', date: '2026-02-19', description: 'Air quality testing — Level 1', amount: 1400, category: 'subcontractor', vendor: 'EcoTest Environmental' },
+      { id: 'cost12', date: '2026-02-20', description: 'Waste disposal — Load 1 (2 bins)', amount: 1850, category: 'subcontractor', vendor: 'CleanHaul BC' },
+      { id: 'cost13', date: '2026-02-23', description: 'Mastic grinding — Level 1 sub', amount: 2800, category: 'subcontractor', vendor: 'FloorPro BC' },
+      { id: 'cost14', date: '2026-02-23', description: 'Oscar — Week 2 (3 days so far)', amount: 2520, category: 'labour', vendor: 'Oscar Morales' },
+      { id: 'cost15', date: '2026-02-23', description: 'Crew ×3–4 — Week 2 (3 days)', amount: 8640, category: 'labour', vendor: '24/7 Workforce' },
+      { id: 'cost16', date: '2026-02-24', description: 'Air quality testing — Level 2', amount: 1400, category: 'subcontractor', vendor: 'EcoTest Environmental' },
+    ],
+    invoices: [
+      {
+        id: 'inv2', number: '2602001', type: 'progress',
+        gross_amount: 97500,
+        holdback_pct: 10,
+        sent_date: '2026-02-25',
+        notes: 'Progress billing — 50% completion. Levels 1 & 2 fully abated and air-cleared. Level 3 in progress.',
+      },
     ],
   },
   {
@@ -267,21 +331,37 @@ export const PROJECTS: Project[] = [
     end_date: '2026-03-28',
     status: 'active',
     estimator: 'JP',
+    superintendent: 'Oscar',
+    po_number: 'HIG-2026-042',
+    contract_signed_date: '2026-02-23',
     estimate_total: 215000,
     budget_labour: 130000,
     budget_materials: 25000,
+    budget_equipment: 15000,
     budget_subs: 35000,
     daily_logs: [
-      { id: 'dl1', date: '2026-03-03', crew: ['Oscar', 'Crew x4'], hours: 40, work_performed: 'Site mobilization, decon unit setup, initial containment installation.', weather: 'Overcast' },
-      { id: 'dl2', date: '2026-03-04', crew: ['Oscar', 'Crew x4'], hours: 40, work_performed: 'VCT removal Level 1 complete (2,500 SF). Waste staging ongoing.', weather: 'Clear' },
-      { id: 'dl3', date: '2026-03-05', crew: ['Oscar', 'Crew x3'], hours: 32, work_performed: 'Ceiling tile removal Level 1 (1,200 SF). HEPA vacuuming in progress.', weather: 'Rain' },
+      {
+        id: 'dl1', date: '2026-03-03', crew: ['Oscar', 'Crew ×4'], hours: 40, weather: 'Overcast', photos: 8,
+        work_performed: 'Site mobilization. Decon unit installed at south entrance. Full perimeter containment erected — Levels 1 & 2. Safety walkthrough with Tom Richter (client rep) complete. All clear to proceed.',
+      },
+      {
+        id: 'dl2', date: '2026-03-04', crew: ['Oscar', 'Crew ×4'], hours: 40, weather: 'Clear', photos: 12,
+        work_performed: 'VCT floor tile removal Level 1 complete — 2,500 SF. Mastic left in place pending grinding sub. Waste staged in decon zone. HEPA vacuuming of floor slab ongoing.',
+      },
+      {
+        id: 'dl3', date: '2026-03-05', crew: ['Oscar', 'Crew ×3'], hours: 32, weather: 'Rain', photos: 7,
+        work_performed: 'Ceiling tile removal Level 1 — 1,200 SF complete. T-bar grid cleaned and HEPA-vacuumed. Crew reduced by one — Row sending replacement tomorrow.',
+        issues: 'HEPA Vac unit #2 motor failure at 9:30 AM. Sunbelt delivered replacement unit by 11:45 AM. Approx 2 hrs downtime for one crew member. No schedule impact — completed target footage by EOD.',
+      },
     ],
     costs: [
-      { id: 'cost1', date: '2026-03-03', description: 'Oscar — 3 days labour', amount: 2520,  category: 'labour',    vendor: 'Oscar Morales' },
-      { id: 'cost2', date: '2026-03-03', description: 'Crew × 4 — 3 days',    amount: 10800, category: 'labour',    vendor: '24/7 Workforce' },
-      { id: 'cost3', date: '2026-03-03', description: 'HEPA Vac rental',       amount: 1200,  category: 'equipment', vendor: 'Sunbelt Rentals' },
-      { id: 'cost4', date: '2026-03-04', description: 'Abatement supplies',    amount: 3400,  category: 'materials', vendor: 'SafeGuard Supply' },
-      { id: 'cost5', date: '2026-03-05', description: 'Waste disposal — load 1', amount: 1850, category: 'subcontractor', vendor: 'CleanHaul BC' },
+      { id: 'cost1', date: '2026-03-03', description: 'Oscar — 3 days labour', amount: 2520,  category: 'labour',       vendor: 'Oscar Morales' },
+      { id: 'cost2', date: '2026-03-03', description: 'Crew ×4 — 3 days',      amount: 10800, category: 'labour',       vendor: '24/7 Workforce' },
+      { id: 'cost3', date: '2026-03-03', description: 'HEPA Vac ×2 rental',    amount: 1200,  category: 'equipment',    vendor: 'Sunbelt Rentals' },
+      { id: 'cost4', date: '2026-03-03', description: 'Decon unit rental',      amount: 1800,  category: 'equipment',    vendor: 'Sunbelt Rentals' },
+      { id: 'cost5', date: '2026-03-04', description: 'Abatement supplies',     amount: 3400,  category: 'materials',    vendor: 'SafeGuard Supply' },
+      { id: 'cost6', date: '2026-03-05', description: 'Waste disposal — Load 1', amount: 1850, category: 'subcontractor', vendor: 'CleanHaul BC' },
     ],
+    invoices: [],
   },
 ]

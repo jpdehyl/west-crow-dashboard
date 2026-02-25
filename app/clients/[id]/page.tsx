@@ -94,7 +94,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {clientProjects.map(p => {
               const spent = p.costs.reduce((s,c) => s + c.amount, 0)
-              const budget = p.budget_labour + p.budget_materials + p.budget_subs
+              const budget = p.budget_labour + p.budget_materials + p.budget_equipment + p.budget_subs
               const pct = Math.round(spent / budget * 100)
               return (
                 <Link key={p.id} href={`/projects/${p.id}`} className="row-hover" style={{

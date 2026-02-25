@@ -2,172 +2,143 @@ import { BIDS } from "@/lib/data"
 import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
 import Link from "next/link"
 
-const STATUS_DOT: Record<string, string> = {
-  active: "#3a6ea8",
-  sent: "#c17f3a",
-  won: "#3a8a5a",
-  lost: "#c0392b",
-  "no-bid": "#a0a09a",
-}
-const STATUS_LABEL: Record<string, string> = {
-  active: "Active",
-  sent: "Sent",
-  won: "Won",
-  lost: "Lost",
-  "no-bid": "No Bid",
+const STATUS: Record<string, { dot: string; label: string }> = {
+  active:   { dot: "#4a6fa8", label: "Active" },
+  sent:     { dot: "#c4963a", label: "Sent" },
+  won:      { dot: "#5a7a5a", label: "Won" },
+  lost:     { dot: "#b85042", label: "Lost" },
+  "no-bid": { dot: "#b5afa5", label: "No Bid" },
 }
 
-function StatusDot({ status }: { status: string }) {
+function Dot({ status }: { status: string }) {
+  const s = STATUS[status] || STATUS["no-bid"]
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem" }}>
-      <span style={{
-        width: 7, height: 7, borderRadius: "50%",
-        background: STATUS_DOT[status] || "#ccc",
-        display: "inline-block", flexShrink: 0,
-      }} />
-      <span style={{ color: "var(--ink-muted)", fontSize: "13px" }}>{STATUS_LABEL[status]}</span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+      <span style={{ color: "var(--ink-muted)", fontSize: "13px" }}>{s.label}</span>
     </span>
   )
 }
 
 export default function DashboardPage() {
   const active = BIDS.filter(b => b.status === "active")
-  const sent = BIDS.filter(b => b.status === "sent")
-  const won = BIDS.filter(b => b.status === "won")
-  const decided = BIDS.filter(b => b.status === "won" || b.status === "lost")
-  const winRate = decided.length > 0 ? Math.round((won.length / decided.length) * 100) : 0
+  const sent   = BIDS.filter(b => b.status === "sent")
+  const won    = BIDS.filter(b => b.status === "won")
+  const decided = BIDS.filter(b => ["won","lost"].includes(b.status))
+  const winRate  = decided.length > 0 ? Math.round(won.length / decided.length * 100) : 0
   const pipeline = [...active, ...sent].reduce((s, b) => s + b.bid_value, 0)
 
-  const kpis = [
-    { label: "Pipeline Value", value: formatCurrency(pipeline), sub: `${active.length + sent.length} active bids` },
-    { label: "Active", value: String(active.length), sub: "in estimation" },
-    { label: "Sent", value: String(sent.length), sub: "awaiting decision" },
-    { label: "Win Rate", value: `${winRate}%`, sub: `${won.length} of ${decided.length} decided` },
-  ]
-
-  const sorted = [...BIDS].sort((a, b) =>
-    a.status === "won" || a.status === "lost" || a.status === "no-bid" ? 1 :
-    b.status === "won" || b.status === "lost" || b.status === "no-bid" ? -1 :
-    new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-  )
-
-  const today = new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+  const sorted = [...BIDS].sort((a, b) => {
+    const aFinal = ["won","lost","no-bid"].includes(a.status)
+    const bFinal = ["won","lost","no-bid"].includes(b.status)
+    if (aFinal !== bFinal) return aFinal ? 1 : -1
+    return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+  })
 
   return (
-    <div style={{ maxWidth: "1100px" }}>
+    <div style={{ maxWidth: "960px" }}>
 
       {/* Header */}
-      <div style={{ marginBottom: "2.5rem" }}>
-        <div style={{
-          fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem"
-        }}>{today}</div>
+      <div style={{ marginBottom: "3rem" }}>
+        <p style={{
+          fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem"
+        }}>
+          {new Date().toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric" })}
+        </p>
         <h1 style={{
-          fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.03em",
-          color: "var(--ink)", lineHeight: 1.1
+          fontFamily: "var(--font-serif), serif",
+          fontSize: "2.75rem", fontWeight: 400,
+          letterSpacing: "-0.03em", lineHeight: 1,
+          color: "var(--ink)",
         }}>Bid Pipeline</h1>
       </div>
 
-      {/* KPI Row */}
+      {/* KPIs — clean row, no card borders */}
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "1px", background: "var(--cream-dark)",
-        border: "1px solid var(--cream-dark)", borderRadius: "12px",
-        overflow: "hidden", marginBottom: "2.5rem"
+        display: "grid", gridTemplateColumns: "repeat(4,1fr)",
+        borderTop: "1px solid var(--border)",
+        borderBottom: "1px solid var(--border)",
+        marginBottom: "3rem",
       }}>
-        {kpis.map(({ label, value, sub }) => (
+        {[
+          { label: "Pipeline Value", value: formatCurrency(pipeline), note: `${active.length + sent.length} open bids` },
+          { label: "Active",         value: String(active.length),    note: "in estimation" },
+          { label: "Awaiting",       value: String(sent.length),      note: "decision pending" },
+          { label: "Win Rate",       value: `${winRate}%`,            note: `${won.length}/${decided.length} decided` },
+        ].map(({ label, value, note }, i, arr) => (
           <div key={label} style={{
-            background: "var(--cream)",
-            padding: "1.5rem 1.75rem",
+            padding: "1.75rem 1.5rem",
+            borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
           }}>
-            <div style={{
+            <p style={{
               fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.6rem"
-            }}>{label}</div>
-            <div style={{
-              fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.03em",
-              color: "var(--ink)", lineHeight: 1, marginBottom: "0.4rem",
-              fontFamily: "var(--font-serif), serif"
-            }}>{value}</div>
-            <div style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{sub}</div>
+              color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem"
+            }}>{label}</p>
+            <p style={{
+              fontFamily: "var(--font-serif), serif",
+              fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em",
+              color: "var(--ink)", lineHeight: 1, marginBottom: "0.4rem"
+            }}>{value}</p>
+            <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{note}</p>
           </div>
         ))}
       </div>
 
-      {/* Bids Table */}
-      <div style={{
-        background: "var(--cream)", border: "1px solid var(--cream-dark)",
-        borderRadius: "12px", overflow: "hidden"
-      }}>
-        <div style={{
-          padding: "1.25rem 1.75rem",
-          borderBottom: "1px solid var(--cream-dark)",
-          display: "flex", alignItems: "center", justifyContent: "space-between"
-        }}>
-          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.01em" }}>
-            Active Bids
-          </span>
-          <Link href="/bids" style={{
-            fontSize: "12px", color: "var(--ink-faint)",
-            textDecoration: "none", letterSpacing: "0.01em"
-          }}>View all →</Link>
-        </div>
+      {/* Table header */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1rem" }}>
+        <h2 style={{
+          fontSize: "13px", fontWeight: 500, letterSpacing: "0.06em",
+          textTransform: "uppercase", color: "var(--ink-muted)"
+        }}>Open Bids</h2>
+        <Link href="/bids" style={{ fontSize: "12px", color: "var(--terra)", textDecoration: "none" }}>
+          All bids →
+        </Link>
+      </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-          <thead>
-            <tr>
-              {["Project", "Client", "Value", "Deadline", "Status"].map(h => (
-                <th key={h} style={{
-                  textAlign: h === "Value" ? "right" : "left",
-                  padding: "0.75rem 1.75rem",
-                  fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: "var(--ink-faint)", fontWeight: 500, whiteSpace: "nowrap",
-                  borderBottom: "1px solid var(--cream-dark)"
-                }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((bid, i) => {
-              const days = daysUntil(bid.deadline)
-              const urgent = days <= 7 && !["won","lost","no-bid"].includes(bid.status)
-              const rowBorder = i < sorted.length - 1 ? "1px solid var(--cream-dark)" : "none"
-              return (
-                <tr key={bid.id} className="bid-row"
-                  
-                  >
-                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, whiteSpace: "nowrap" }}>
-                    <Link href={`/bids/${bid.id}`} style={{
-                      color: "var(--ink)", textDecoration: "none",
-                      fontWeight: 500, fontSize: "14px"
-                    }}>{bid.project_name}</Link>
-                  </td>
-                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
-                    {bid.client}
-                  </td>
-                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, textAlign: "right", fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap" }}>
-                    {formatCurrency(bid.bid_value)}
-                  </td>
-                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, whiteSpace: "nowrap" }}>
-                    <span style={{ color: urgent ? "var(--amber)" : "var(--ink-muted)" }}>
-                      {formatDate(bid.deadline)}
-                    </span>
-                    {urgent && (
-                      <span style={{
-                        marginLeft: "0.5rem", fontSize: "11px",
-                        background: "var(--amber-light)", color: "var(--amber)",
-                        padding: "1px 6px", borderRadius: "4px", fontWeight: 500
-                      }}>{days}d</span>
-                    )}
-                  </td>
-                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder }}>
-                    <StatusDot status={bid.status} />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      {/* Table */}
+      <div style={{ borderTop: "1px solid var(--border)" }}>
+        {sorted.map((bid, i) => {
+          const days = daysUntil(bid.deadline)
+          const urgent = days <= 7 && !["won","lost","no-bid"].includes(bid.status)
+          return (
+            <Link key={bid.id} href={`/bids/${bid.id}`}
+              className="row-hover"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto auto auto",
+                gap: "0 2rem",
+                alignItems: "center",
+                padding: "1rem 0.5rem",
+                borderBottom: "1px solid var(--border)",
+                textDecoration: "none",
+              }}>
+              {/* Name + client */}
+              <div>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", marginBottom: "0.2rem" }}>
+                  {bid.project_name}
+                </p>
+                <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{bid.client}</p>
+              </div>
+              {/* Value */}
+              <p style={{
+                fontFamily: "var(--font-serif), serif",
+                fontSize: "16px", color: "var(--ink)", whiteSpace: "nowrap"
+              }}>{formatCurrency(bid.bid_value)}</p>
+              {/* Deadline */}
+              <p style={{ fontSize: "13px", color: urgent ? "var(--terra)" : "var(--ink-muted)", whiteSpace: "nowrap" }}>
+                {formatDate(bid.deadline)}
+                {urgent && <span style={{
+                  marginLeft: "0.4rem", fontSize: "11px",
+                  background: "var(--terra-light)", color: "var(--terra)",
+                  padding: "1px 5px", borderRadius: "4px", fontWeight: 500
+                }}>{days}d</span>}
+              </p>
+              {/* Status */}
+              <Dot status={bid.status} />
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

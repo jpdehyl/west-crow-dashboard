@@ -1,46 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --cream: #f5f2eb;
-  --cream-dark: #ede9df;
-  --ink: #111008;
-  --ink-muted: #5c5a52;
-  --ink-faint: #a8a69e;
-  --forest: #1b2e1b;
-  --forest-mid: #2d4a2d;
-  --forest-light: #4a7c4a;
-  --amber: #c17f3a;
-  --amber-light: #f5e6cf;
-  --green-dot: #3a8a5a;
-  --blue-dot: #3a6ea8;
-  --red-dot: #c0392b;
-  --gray-dot: #a0a09a;
+  --bg: #fffdf8;
+  --bg-subtle: #f7f2e9;
+  --border: #e8e1d6;
+  --ink: #0f0e0b;
+  --ink-muted: #7a7468;
+  --ink-faint: #b5afa5;
+  --terra: #c4714a;
+  --terra-light: #f7ede6;
+  --gold: #c4963a;
+  --gold-light: #f7f0de;
+  --sage: #5a7a5a;
+  --sage-light: #e8f0e8;
+  --blue-soft: #4a6fa8;
+  --red-soft: #b85042;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background-color: var(--cream);
+  background: var(--bg);
   color: var(--ink);
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer base {
-  h1, h2, h3 {
-    letter-spacing: -0.02em;
-  }
-}
+.row-hover:hover { background: var(--bg-subtle); }
+.row-hover { transition: background 0.12s ease; }
 
-.bid-row:hover {
-  background: var(--cream-dark) !important;
-}
-
-.bid-row {
-  transition: background 0.1s ease;
-}
+.nav-link { transition: color 0.12s ease; }

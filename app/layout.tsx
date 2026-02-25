@@ -1,22 +1,33 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { DM_Sans, DM_Serif_Display } from "next/font/google"
 import "./globals.css"
 import Sidebar from "@/components/Sidebar"
 
-const inter = Inter({ subsets: ["latin"] })
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600"],
+})
+
+const dmSerif = DM_Serif_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: "400",
+})
 
 export const metadata: Metadata = {
-  title: "West Crow Dashboard",
-  description: "Bid tracking & pipeline management",
+  title: "West Crow",
+  description: "Bid pipeline & project management",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50 text-gray-900`}>
-        <div className="flex min-h-screen">
+      <body className={`${dmSans.variable} ${dmSerif.variable}`}
+        style={{ fontFamily: "var(--font-sans), sans-serif" }}>
+        <div style={{ display: "flex", minHeight: "100vh" }}>
           <Sidebar />
-          <main className="flex-1 p-8 overflow-auto">
+          <main style={{ flex: 1, padding: "2.5rem 3rem", overflowY: "auto", background: "var(--cream)" }}>
             {children}
           </main>
         </div>

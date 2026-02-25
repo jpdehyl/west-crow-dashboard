@@ -1,63 +1,82 @@
 import { BIDS } from "@/lib/data"
-import { formatCurrency, formatDate, daysUntil, statusLabel, statusColor, cn } from "@/lib/utils"
+import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
 import Link from "next/link"
-import { Plus } from "lucide-react"
+
+const STATUS_DOT: Record<string, string> = {
+  active: "#3a6ea8", sent: "#c17f3a", won: "#3a8a5a", lost: "#c0392b", "no-bid": "#a0a09a",
+}
+const STATUS_LABEL: Record<string, string> = {
+  active: "Active", sent: "Sent", won: "Won", lost: "Lost", "no-bid": "No Bid",
+}
+
+function StatusDot({ status }: { status: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem" }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_DOT[status] || "#ccc", display: "inline-block" }} />
+      <span style={{ color: "var(--ink-muted)", fontSize: "13px" }}>{STATUS_LABEL[status]}</span>
+    </span>
+  )
+}
 
 export default function BidsPage() {
   const sorted = [...BIDS].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div style={{ maxWidth: "1100px" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "2.5rem" }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">All Bids</h1>
-          <p className="text-sm text-gray-500 mt-1">{BIDS.length} bids total</p>
+          <div style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
+            {BIDS.length} bids total
+          </div>
+          <h1 style={{ fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--ink)" }}>All Bids</h1>
         </div>
-        <Link
-          href="/bids/new"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
-        >
-          <Plus size={16} />
-          New Bid
-        </Link>
+        <Link href="/bids/new" style={{
+          padding: "0.6rem 1.25rem", background: "var(--ink)", color: "var(--cream)",
+          borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none",
+          letterSpacing: "0.01em"
+        }}>+ New Bid</Link>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <table className="w-full text-sm">
+      <div style={{ background: "var(--cream)", border: "1px solid var(--cream-dark)", borderRadius: "12px", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Project</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Client</th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Value</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Deadline</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Estimator</th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Margin</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Status</th>
+            <tr>
+              {[["Project","left"],["Client","left"],["Value","right"],["Deadline","left"],["Estimator","left"],["Margin","right"],["Status","left"]].map(([h, align]) => (
+                <th key={h} style={{
+                  textAlign: align as "left" | "right", padding: "0.75rem 1.5rem",
+                  fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--ink-faint)", fontWeight: 500, whiteSpace: "nowrap",
+                  borderBottom: "1px solid var(--cream-dark)"
+                }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {sorted.map((bid) => {
+            {sorted.map((bid, i) => {
               const days = daysUntil(bid.deadline)
-              const urgent = days <= 7 && bid.status !== 'won' && bid.status !== 'lost' && bid.status !== 'no-bid'
+              const urgent = days <= 7 && !["won","lost","no-bid"].includes(bid.status)
+              const border = i < sorted.length - 1 ? "1px solid var(--cream-dark)" : "none"
               return (
-                <tr key={bid.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    <Link href={`/bids/${bid.id}`} className="hover:text-blue-600">{bid.project_name}</Link>
+                <tr key={bid.id} className="bid-row"
+                  
+                  >
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                    <Link href={`/bids/${bid.id}`} style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 500 }}>
+                      {bid.project_name}
+                    </Link>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{bid.client}</td>
-                  <td className="px-6 py-4 text-right font-medium">{formatCurrency(bid.bid_value)}</td>
-                  <td className={cn("px-6 py-4", urgent ? "text-orange-600 font-medium" : "text-gray-500")}>
-                    {formatDate(bid.deadline)}
-                    {urgent && <span className="ml-1.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">{days}d</span>}
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.client}</td>
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>{formatCurrency(bid.bid_value)}</td>
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                    <span style={{ color: urgent ? "var(--amber)" : "var(--ink-muted)" }}>{formatDate(bid.deadline)}</span>
+                    {urgent && <span style={{ marginLeft: "0.4rem", fontSize: "11px", background: "var(--amber-light)", color: "var(--amber)", padding: "1px 5px", borderRadius: "4px" }}>{days}d</span>}
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{bid.estimator}</td>
-                  <td className="px-6 py-4 text-right text-gray-500">
-                    {bid.margin_pct != null ? `${bid.margin_pct}%` : '—'}
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, textAlign: "right", color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
+                    {bid.margin_pct != null ? `${bid.margin_pct}%` : "—"}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", statusColor(bid.status))}>
-                      {statusLabel(bid.status)}
-                    </span>
+                  <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                    <StatusDot status={bid.status} />
                   </td>
                 </tr>
               )

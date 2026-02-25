@@ -1,87 +1,167 @@
 import { BIDS } from "@/lib/data"
-import { formatCurrency, formatDate, daysUntil, statusLabel, statusColor } from "@/lib/utils"
-import { cn } from "@/lib/utils"
+import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
 import Link from "next/link"
-import { TrendingUp, FileText, DollarSign, Target } from "lucide-react"
+
+const STATUS_DOT: Record<string, string> = {
+  active: "#3a6ea8",
+  sent: "#c17f3a",
+  won: "#3a8a5a",
+  lost: "#c0392b",
+  "no-bid": "#a0a09a",
+}
+const STATUS_LABEL: Record<string, string> = {
+  active: "Active",
+  sent: "Sent",
+  won: "Won",
+  lost: "Lost",
+  "no-bid": "No Bid",
+}
+
+function StatusDot({ status }: { status: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem" }}>
+      <span style={{
+        width: 7, height: 7, borderRadius: "50%",
+        background: STATUS_DOT[status] || "#ccc",
+        display: "inline-block", flexShrink: 0,
+      }} />
+      <span style={{ color: "var(--ink-muted)", fontSize: "13px" }}>{STATUS_LABEL[status]}</span>
+    </span>
+  )
+}
 
 export default function DashboardPage() {
-  const active = BIDS.filter(b => b.status === 'active')
-  const sent = BIDS.filter(b => b.status === 'sent')
-  const won = BIDS.filter(b => b.status === 'won')
-  const decided = BIDS.filter(b => b.status === 'won' || b.status === 'lost')
+  const active = BIDS.filter(b => b.status === "active")
+  const sent = BIDS.filter(b => b.status === "sent")
+  const won = BIDS.filter(b => b.status === "won")
+  const decided = BIDS.filter(b => b.status === "won" || b.status === "lost")
   const winRate = decided.length > 0 ? Math.round((won.length / decided.length) * 100) : 0
-  const pipeline = [...active, ...sent].reduce((sum, b) => sum + b.bid_value, 0)
+  const pipeline = [...active, ...sent].reduce((s, b) => s + b.bid_value, 0)
 
   const kpis = [
-    { label: "Active Bids", value: active.length, icon: FileText, color: "text-blue-600" },
-    { label: "Sent / Pending", value: sent.length, icon: TrendingUp, color: "text-amber-600" },
-    { label: "Pipeline Value", value: formatCurrency(pipeline), icon: DollarSign, color: "text-emerald-600" },
-    { label: "Win Rate", value: `${winRate}%`, icon: Target, color: "text-purple-600" },
+    { label: "Pipeline Value", value: formatCurrency(pipeline), sub: `${active.length + sent.length} active bids` },
+    { label: "Active", value: String(active.length), sub: "in estimation" },
+    { label: "Sent", value: String(sent.length), sub: "awaiting decision" },
+    { label: "Win Rate", value: `${winRate}%`, sub: `${won.length} of ${decided.length} decided` },
   ]
 
-  // Sort: deadline soonest first, excluding no-bid/lost
-  const tableBids = [...BIDS]
-    .filter(b => b.status !== 'no-bid' && b.status !== 'lost')
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .concat(BIDS.filter(b => b.status === 'no-bid' || b.status === 'lost'))
+  const sorted = [...BIDS].sort((a, b) =>
+    a.status === "won" || a.status === "lost" || a.status === "no-bid" ? 1 :
+    b.status === "won" || b.status === "lost" || b.status === "no-bid" ? -1 :
+    new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+  )
+
+  const today = new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Bid Pipeline</h1>
-        <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    <div style={{ maxWidth: "1100px" }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: "2.5rem" }}>
+        <div style={{
+          fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem"
+        }}>{today}</div>
+        <h1 style={{
+          fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.03em",
+          color: "var(--ink)", lineHeight: 1.1
+        }}>Bid Pipeline</h1>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</span>
-              <Icon size={16} className={color} />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
+      {/* KPI Row */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+        gap: "1px", background: "var(--cream-dark)",
+        border: "1px solid var(--cream-dark)", borderRadius: "12px",
+        overflow: "hidden", marginBottom: "2.5rem"
+      }}>
+        {kpis.map(({ label, value, sub }) => (
+          <div key={label} style={{
+            background: "var(--cream)",
+            padding: "1.5rem 1.75rem",
+          }}>
+            <div style={{
+              fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.6rem"
+            }}>{label}</div>
+            <div style={{
+              fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.03em",
+              color: "var(--ink)", lineHeight: 1, marginBottom: "0.4rem",
+              fontFamily: "var(--font-serif), serif"
+            }}>{value}</div>
+            <div style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{sub}</div>
           </div>
         ))}
       </div>
 
       {/* Bids Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800">Active Bids</h2>
-          <Link href="/bids" className="text-xs text-blue-600 hover:underline">View all →</Link>
+      <div style={{
+        background: "var(--cream)", border: "1px solid var(--cream-dark)",
+        borderRadius: "12px", overflow: "hidden"
+      }}>
+        <div style={{
+          padding: "1.25rem 1.75rem",
+          borderBottom: "1px solid var(--cream-dark)",
+          display: "flex", alignItems: "center", justifyContent: "space-between"
+        }}>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.01em" }}>
+            Active Bids
+          </span>
+          <Link href="/bids" style={{
+            fontSize: "12px", color: "var(--ink-faint)",
+            textDecoration: "none", letterSpacing: "0.01em"
+          }}>View all →</Link>
         </div>
-        <table className="w-full text-sm">
+
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Project</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Client</th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Value</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Deadline</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Status</th>
+            <tr>
+              {["Project", "Client", "Value", "Deadline", "Status"].map(h => (
+                <th key={h} style={{
+                  textAlign: h === "Value" ? "right" : "left",
+                  padding: "0.75rem 1.75rem",
+                  fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--ink-faint)", fontWeight: 500, whiteSpace: "nowrap",
+                  borderBottom: "1px solid var(--cream-dark)"
+                }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {tableBids.map((bid) => {
+            {sorted.map((bid, i) => {
               const days = daysUntil(bid.deadline)
-              const urgentDeadline = days <= 7 && bid.status !== 'won' && bid.status !== 'lost' && bid.status !== 'no-bid'
+              const urgent = days <= 7 && !["won","lost","no-bid"].includes(bid.status)
+              const rowBorder = i < sorted.length - 1 ? "1px solid var(--cream-dark)" : "none"
               return (
-                <tr key={bid.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    <Link href={`/bids/${bid.id}`} className="hover:text-blue-600 transition-colors">
-                      {bid.project_name}
-                    </Link>
+                <tr key={bid.id} className="bid-row"
+                  
+                  >
+                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, whiteSpace: "nowrap" }}>
+                    <Link href={`/bids/${bid.id}`} style={{
+                      color: "var(--ink)", textDecoration: "none",
+                      fontWeight: 500, fontSize: "14px"
+                    }}>{bid.project_name}</Link>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{bid.client}</td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-900">{formatCurrency(bid.bid_value)}</td>
-                  <td className={cn("px-6 py-4", urgentDeadline ? "text-orange-600 font-medium" : "text-gray-500")}>
-                    {formatDate(bid.deadline)}
-                    {urgentDeadline && <span className="ml-1.5 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">{days}d</span>}
+                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
+                    {bid.client}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", statusColor(bid.status))}>
-                      {statusLabel(bid.status)}
+                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, textAlign: "right", fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap" }}>
+                    {formatCurrency(bid.bid_value)}
+                  </td>
+                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder, whiteSpace: "nowrap" }}>
+                    <span style={{ color: urgent ? "var(--amber)" : "var(--ink-muted)" }}>
+                      {formatDate(bid.deadline)}
                     </span>
+                    {urgent && (
+                      <span style={{
+                        marginLeft: "0.5rem", fontSize: "11px",
+                        background: "var(--amber-light)", color: "var(--amber)",
+                        padding: "1px 6px", borderRadius: "4px", fontWeight: 500
+                      }}>{days}d</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "1rem 1.75rem", borderBottom: rowBorder }}>
+                    <StatusDot status={bid.status} />
                   </td>
                 </tr>
               )

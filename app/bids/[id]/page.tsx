@@ -4,6 +4,7 @@ import { StatusDot } from "@/components/StatusDot"
 import BidActions from "@/components/BidActions"
 import CloneBidButton from "@/components/CloneBidButton"
 import AddDocumentForm from "@/components/AddDocumentForm"
+import EditBidForm from "@/components/EditBidForm"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -47,6 +48,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <StatusDot status={bid.status} />
+            <EditBidForm bid={bid as any} clients={clients as any[]} />
             <CloneBidButton bidId={bid.id} />
           </div>
         </div>

@@ -157,7 +157,7 @@ function createBid(data) {
 }
 
 function updateBid(id, data) {
-  const allowed = ['status','bid_value','deadline','margin_pct','notes','estimator']
+  const allowed = ['status','project_name','client','client_id','bid_value','deadline','margin_pct','notes','estimator']
   const updates = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)))
   updateCells('Bids', 'id', id, updates)
 

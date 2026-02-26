@@ -1,32 +1,33 @@
-import { BIDS, CLIENTS, BidStage } from "@/lib/data"
+import { getBid, getClients } from "@/lib/sheets"
 import { formatCurrency, formatDate, formatDateShort, daysUntil, STATUS_COLOR, statusLabel } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
 import BidActions from "@/components/BidActions"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+export const dynamic = 'force-dynamic'
+
+type BidStage = 'invited' | 'estimating' | 'submitted' | 'decision'
 const STAGE_ORDER: BidStage[] = ['invited','estimating','submitted','decision']
 const STAGE_LABEL: Record<BidStage, string> = { invited: 'Invited', estimating: 'Estimating', submitted: 'Submitted', decision: 'Decision' }
+const DOC_LABEL: Record<string, string> = { bid_docs: 'Bid Documents', drawings: 'Drawings', hazmat: 'Hazmat Report', quote_sheet: 'Quote Sheet', addendum: 'Addendum' }
 
-const DOC_LABEL = { bid_docs: 'Bid Documents', drawings: 'Drawings', hazmat: 'Hazmat Report', quote_sheet: 'Quote Sheet', addendum: 'Addendum' }
-
-export default function BidDetailPage({ params }: { params: { id: string } }) {
-  const bid = BIDS.find(b => b.id === params.id)
+export default async function BidDetailPage({ params }: { params: { id: string } }) {
+  const [bid, clients] = await Promise.all([getBid(params.id), getClients()])
   if (!bid) notFound()
-  const client = CLIENTS.find(c => c.id === bid.client_id)
+
+  const client = (clients as any[]).find((c: any) => c.id === bid.client_id)
   const days = daysUntil(bid.deadline)
   const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)
-  const completedStages = new Set(bid.timeline.map(e => e.stage))
-  const currentStageIdx = Math.max(...bid.timeline.map(e => STAGE_ORDER.indexOf(e.stage)))
+  const completedStages = new Set((bid.timeline as any[]).map((e: any) => e.stage))
+  const currentStageIdx = Math.max(...(bid.timeline as any[]).map((e: any) => STAGE_ORDER.indexOf(e.stage)))
 
   return (
     <div style={{ maxWidth: "860px" }}>
-      {/* Back */}
       <Link href="/bids" style={{ fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1.75rem" }}>
         ← Pipeline
       </Link>
 
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.5rem" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.4rem" }}>
@@ -48,28 +49,16 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
       {/* Timeline strip */}
       <div style={{ display: "flex", alignItems: "flex-start", margin: "2rem 0", padding: "1.5rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)" }}>
         {STAGE_ORDER.map((stage, i) => {
-          const event = bid.timeline.find(e => e.stage === stage)
+          const event = (bid.timeline as any[]).find((e: any) => e.stage === stage)
           const isComplete = completedStages.has(stage)
           const isCurrent = i === currentStageIdx
           const isLast = i === STAGE_ORDER.length - 1
           return (
             <div key={stage} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-              {/* Connector line */}
               {!isLast && (
-                <div style={{
-                  position: "absolute", top: "9px", left: "50%", width: "100%",
-                  height: "2px", background: i < currentStageIdx ? "var(--terra)" : "var(--border)",
-                  zIndex: 0,
-                }} />
+                <div style={{ position: "absolute", top: "9px", left: "50%", width: "100%", height: "2px", background: i < currentStageIdx ? "var(--terra)" : "var(--border)", zIndex: 0 }} />
               )}
-              {/* Dot */}
-              <div style={{
-                width: 18, height: 18, borderRadius: "50%", zIndex: 1,
-                background: isComplete ? "var(--terra)" : "var(--border)",
-                border: isCurrent ? "3px solid var(--terra)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", zIndex: 1, background: isComplete ? "var(--terra)" : "var(--border)", border: isCurrent ? "3px solid var(--terra)" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {isComplete && <span style={{ color: "white", fontSize: "9px", fontWeight: 700 }}>✓</span>}
               </div>
               <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem", color: isComplete ? "var(--ink)" : "var(--ink-faint)" }}>
@@ -87,12 +76,12 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
         })}
       </div>
 
-      {/* 3 col stats */}
+      {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "2.5rem" }}>
         {[
-          { label: "Deadline",   value: formatDate(bid.deadline), sub: urgent ? `${days} days left` : bid.status === 'won' ? 'Closed' : '' },
-          { label: "Estimator",  value: bid.estimator, sub: "West Crow" },
-          { label: "Margin",     value: bid.margin_pct != null ? `${bid.margin_pct}%` : "—", sub: bid.margin_pct ? "on win" : "pending" },
+          { label: "Deadline",  value: formatDate(bid.deadline), sub: urgent ? `${days} days left` : bid.status === 'won' ? 'Closed' : '' },
+          { label: "Estimator", value: bid.estimator, sub: "West Crow" },
+          { label: "Margin",    value: bid.margin_pct != null ? `${bid.margin_pct}%` : "—", sub: bid.margin_pct ? "on win" : "pending" },
         ].map(({ label, value, sub }) => (
           <div key={label} style={{ background: "var(--bg)", padding: "1.25rem 1.5rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
@@ -122,9 +111,9 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
         <div style={{ marginBottom: "2.5rem" }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
-            {bid.documents.map((doc, i) => (
+            {(bid.documents as any[]).map((doc: any, i: number) => (
               <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents!.length - 1 ? "1px solid var(--border)" : "none", textDecoration: "none", color: "var(--ink)", fontSize: "14px", fontWeight: 500 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents.length - 1 ? "1px solid var(--border)" : "none", textDecoration: "none", color: "var(--ink)", fontSize: "14px", fontWeight: 500 }}
                 className="row-hover">
                 <span>{DOC_LABEL[doc.type] || doc.name}</span>
                 <span style={{ fontSize: "12px", color: "var(--terra)" }}>Open ↗</span>
@@ -138,11 +127,11 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
       <div>
         <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Activity Log</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {[...bid.timeline].reverse().map((event, i) => (
+          {[...(bid.timeline as any[])].reverse().map((event: any, i: number) => (
             <div key={i} style={{ display: "flex", gap: "1rem", padding: "0.9rem 0", borderBottom: i < bid.timeline.length - 1 ? "1px solid var(--border)" : "none", alignItems: "flex-start" }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--terra)", marginTop: "5px", flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginRight: "0.5rem" }}>{STAGE_LABEL[event.stage]}</span>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginRight: "0.5rem" }}>{STAGE_LABEL[event.stage as BidStage] ?? event.stage}</span>
                 <span style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{event.note}</span>
               </div>
               <div style={{ fontSize: "12px", color: "var(--ink-faint)", whiteSpace: "nowrap" }}>
@@ -153,15 +142,15 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* If won — link to project */}
+      {/* Won → link to project */}
       {bid.status === 'won' && (
         <div style={{ marginTop: "2.5rem", padding: "1.25rem 1.5rem", background: "var(--sage-light)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--sage)", marginBottom: "0.2rem" }}>This bid was won ✓</p>
             <p style={{ fontSize: "12px", color: "var(--sage)" }}>View the active project — daily logs, costs, and progress.</p>
           </div>
-          <Link href="/projects/p1" style={{ padding: "0.6rem 1.25rem", background: "var(--sage)", color: "white", borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none" }}>
-            Open Project →
+          <Link href="/projects" style={{ padding: "0.6rem 1.25rem", background: "var(--sage)", color: "white", borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none" }}>
+            Open Projects →
           </Link>
         </div>
       )}

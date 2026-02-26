@@ -1,7 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CLIENTS } from "@/lib/data"
 import Link from "next/link"
 
 const inputStyle: React.CSSProperties = {
@@ -30,6 +29,11 @@ const labelStyle: React.CSSProperties = {
 export default function NewBidPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [clients, setClients] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/clients').then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -99,7 +103,7 @@ export default function NewBidPage() {
               <label style={labelStyle}>Client <span style={{ color: "var(--terra)" }}>*</span></label>
               <select required name="client" style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="">Select client…</option>
-                {CLIENTS.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {clients.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
                 <option value="__new">+ New client</option>
               </select>
             </div>

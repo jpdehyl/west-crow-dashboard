@@ -68,6 +68,11 @@ export async function updateInvoice(projectId: string, data: object) {
   return call(`projects/${projectId}/invoices`, 'PATCH', data)
 }
 
+export async function getProject(id: string) {
+  const all = await getProjects()
+  return all.find((p: { id: string }) => p.id === id) ?? null
+}
+
 export async function getClients() {
   return (await call('clients')) ?? CLIENTS
 }

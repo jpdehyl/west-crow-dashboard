@@ -157,7 +157,7 @@ function createBid(data) {
 }
 
 function updateBid(id, data) {
-  const allowed = ['status','project_name','client','client_id','bid_value','deadline','margin_pct','notes','estimator']
+  const allowed = ['status','project_name','client','client_id','bid_value','deadline','margin_pct','notes','estimator','estimate_data']
   const updates = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)))
   updateCells('Bids', 'id', id, updates)
 
@@ -295,7 +295,7 @@ function createClient(data) {
 function setup() {
   const spreadsheet = ss()
   const TABS = {
-    Bids:         ['id','project_name','client','client_id','bid_value','deadline','status','margin_pct','estimator','notes','created_at'],
+    Bids:         ['id','project_name','client','client_id','bid_value','deadline','status','margin_pct','estimator','notes','created_at','estimate_data'],
     BidTimeline:  ['id','bid_id','stage','date','note','by'],
     BidDocuments: ['id','bid_id','name','url','type'],
     Projects:     ['id','bid_id','project_name','client','client_id','contract_value','start_date','end_date','status','estimator','superintendent','po_number','contract_signed_date','budget_labour','budget_materials','budget_equipment','budget_subs','estimate_total'],

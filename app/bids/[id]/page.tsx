@@ -48,6 +48,9 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <StatusDot status={bid.status} />
+            <Link href={`/bids/${bid.id}/estimate`} style={{ padding: "0.5rem 1rem", background: "var(--ink)", color: "var(--bg)", borderRadius: "7px", fontSize: "13px", fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              📐 Estimate
+            </Link>
             <EditBidForm bid={bid as any} clients={clients as any[]} />
             <CloneBidButton bidId={bid.id} />
           </div>

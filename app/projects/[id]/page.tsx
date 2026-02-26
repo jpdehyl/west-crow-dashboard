@@ -1,5 +1,7 @@
 import { PROJECTS, BIDS, CLIENTS } from "@/lib/data"
 import { formatCurrency, formatDate, formatDateShort, daysUntil } from "@/lib/utils"
+import LogForm from "@/components/LogForm"
+import CostForm from "@/components/CostForm"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -327,6 +329,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       ══════════════════════════════════════════════════════════════════════ */}
       <SectionMarker n="04" title="Field Execution" date={project.start_date ? formatDateShort(project.start_date) : undefined} />
 
+      {!notStarted && (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <LogForm projectId={project.id} />
+        </div>
+      )}
+
       {notStarted ? (
         <div style={{ padding: "2rem", background: "var(--gold-light)", border: "1px solid var(--border)", borderRadius: "10px", textAlign: "center" }}>
           <p style={{ fontSize: "14px", color: "var(--ink-muted)" }}>
@@ -422,6 +430,10 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           SECTION 05 · COST TRACKER
       ══════════════════════════════════════════════════════════════════════ */}
       <SectionMarker n="05" title="Cost Tracker" />
+
+      <div style={{ marginBottom: "1.25rem" }}>
+        <CostForm projectId={project.id} />
+      </div>
 
       {/* Budget vs Actual bars */}
       <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem 1.5rem", marginBottom: "1.25rem" }}>

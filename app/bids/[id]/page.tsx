@@ -1,6 +1,7 @@
 import { BIDS, CLIENTS, BidStage } from "@/lib/data"
 import { formatCurrency, formatDate, formatDateShort, daysUntil, STATUS_COLOR, statusLabel } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
+import BidActions from "@/components/BidActions"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -99,6 +100,11 @@ export default function BidDetailPage({ params }: { params: { id: string } }) {
             {sub && <p style={{ fontSize: "11px", color: urgent && label === "Deadline" ? "var(--terra)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{sub}</p>}
           </div>
         ))}
+      </div>
+
+      {/* Status Actions */}
+      <div style={{ marginBottom: "2.5rem" }}>
+        <BidActions bidId={bid.id} currentStatus={bid.status as any} currentValue={bid.bid_value} />
       </div>
 
       {/* Notes */}

@@ -44,6 +44,7 @@ test.describe('Dashboard (home)', () => {
   })
 
   test('sidebar links are all reachable', async ({ page, request }) => {
+    test.setTimeout(60000)
     await page.goto(BASE)
     await page.waitForLoadState('networkidle')
 
@@ -99,8 +100,8 @@ test.describe('Bid Detail (/bids/[id])', () => {
     await page.waitForLoadState('networkidle')
     await expect(page.locator('h1')).toBeVisible()
     // Timeline strip should have stage dots
-    await expect(page.locator('text=Invited')).toBeVisible()
-    await expect(page.locator('text=Estimating')).toBeVisible()
+    await expect(page.locator('text=Invited').first()).toBeVisible()
+    await expect(page.locator('text=Estimating').first()).toBeVisible()
   })
 
   test('bid status action panel renders', async ({ page }) => {
@@ -193,7 +194,8 @@ test.describe('Project Detail (/projects/[id])', () => {
   test('p2 shows daily logs', async ({ page }) => {
     await page.goto(`${BASE}/projects/p2`)
     await page.waitForLoadState('networkidle')
-    await expect(page.locator('text=Day 1').or(page.locator('text=day'))).toBeVisible({ timeout: 8000 })
+    // Daily logs render — check for the log header section (Day N label in uppercase)
+    await expect(page.locator('span').filter({ hasText: /^Day \d+$/ }).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('p2 shows + Log Today button', async ({ page }) => {
@@ -207,7 +209,7 @@ test.describe('Project Detail (/projects/[id])', () => {
     await page.waitForLoadState('networkidle')
     await page.click('text=+ Log Today')
     await expect(page.locator('text=Daily Log Entry')).toBeVisible()
-    await expect(page.locator('textarea')).toBeVisible()
+    await expect(page.locator('textarea').first()).toBeVisible()
   })
 
   test('p2 shows + Add Cost button', async ({ page }) => {

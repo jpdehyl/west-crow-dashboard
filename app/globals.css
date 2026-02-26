@@ -28,5 +28,64 @@ body {
 
 .row-hover:hover { background: var(--bg-subtle); }
 .row-hover { transition: background 0.12s ease; }
-
 .nav-link { transition: color 0.12s ease; }
+
+/* ── Mobile layout ─────────────────────────────────────────────────────────── */
+
+/* Sidebar hidden on mobile, shown on desktop */
+.sidebar        { display: flex; }
+.mobile-header  { display: none; }
+.mobile-nav     { display: none; }
+
+/* Main padding */
+.main-content { padding: 2.5rem 3rem; }
+
+/* Responsive grids */
+.kpi-grid-5  { display: grid; grid-template-columns: repeat(5, 1fr); }
+.kpi-grid-4  { display: grid; grid-template-columns: repeat(4, 1fr); }
+.kpi-grid-3  { display: grid; grid-template-columns: repeat(3, 1fr); }
+.kpi-grid-2  { display: grid; grid-template-columns: repeat(2, 1fr); }
+.stage-strip { display: flex; }
+
+/* Table scroll wrapper */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+  /* Hide sidebar, show mobile header + bottom nav */
+  .sidebar        { display: none !important; }
+  .mobile-header  { display: flex; }
+  .mobile-nav     { display: flex; }
+
+  /* Tighter padding */
+  .main-content { padding: 1.25rem 1rem 5rem; }
+
+  /* KPI grids collapse */
+  .kpi-grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid-3 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Stage strip scrolls horizontally */
+  .stage-strip {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .stage-strip::-webkit-scrollbar { display: none; }
+  .stage-strip > * { min-width: 100px; flex-shrink: 0; }
+
+  /* Board view stacks */
+  .board-grid { grid-template-columns: 1fr !important; }
+
+  /* Table cells tighten */
+  .table-scroll th,
+  .table-scroll td { padding: 0.7rem 0.85rem !important; font-size: 13px !important; }
+
+  /* Hide lower-priority table columns on mobile */
+  .col-hide-mobile { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid-5 { grid-template-columns: 1fr; }
+  .kpi-grid-3 { grid-template-columns: 1fr; }
+  .main-content { padding: 1rem 0.85rem 5rem; }
+}

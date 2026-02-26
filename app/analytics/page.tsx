@@ -125,7 +125,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* KPI row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginBottom: "0.5rem" }}>
+      <div className="kpi-grid-5" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginBottom: "0.5rem" }}>
         {[
           { label: "Total Bids",     value: String(bids.length),          sub: "all time" },
           { label: "Win Rate",       value: `${winRate}%`,                sub: `${won.length} of ${decided.length} decided`, accent: winRate < 30 },
@@ -263,7 +263,7 @@ export default async function AnalyticsPage() {
       {avgMargin !== null && (
         <>
           <Section title="Margin Summary" />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div className="kpi-grid-3" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
             {[
               { label: "Avg Margin (won)",  value: `${avgMargin}%`,               sub: `${wonWithMargin.length} bids with data` },
               { label: "Total Won Revenue", value: formatCurrency(totalWonValue),  sub: `${won.length} won jobs` },

@@ -94,8 +94,7 @@ export default function DashboardPage() {
       <div style={{ padding: "2.5rem 3rem" }}>
 
         {/* KPIs */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(4,1fr)",
+        <div className="kpi-grid-4" style={{
           border: "1px solid var(--border)", borderRadius: "12px",
           overflow: "hidden", marginBottom: "3rem",
         }}>

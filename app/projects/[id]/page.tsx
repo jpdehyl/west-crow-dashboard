@@ -168,7 +168,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginTop: "1rem", marginBottom: "0.5rem" }}>
+      <div className="kpi-grid-4" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginTop: "1rem", marginBottom: "0.5rem" }}>
         {[
           { label: "Contract",     value: formatCurrency(project.contract_value), sub: "agreed value",           warn: false },
           { label: "Spent So Far", value: formatCurrency(totalCosts),             sub: `${budgetPct}% of budget`, warn: budgetPct > 85 },
@@ -342,7 +342,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         })}
       </div>
 
-      <div style={{ border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+      <div className="table-scroll" style={{ border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
             <tr style={{ background: "var(--bg-subtle)" }}>
@@ -435,7 +435,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           })}
 
           {(project.invoices as any[]).length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+            <div className="kpi-grid-3" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
               {[
                 { label: "Total invoiced",  value: formatCurrency(totalInvoiced) },
                 { label: "Total collected", value: formatCurrency(totalPaid) },

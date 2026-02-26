@@ -49,12 +49,12 @@ export default function DashboardPage() {
     : "No urgent deadlines"
 
   return (
-    <div style={{ maxWidth: "960px", marginLeft: "-3rem", marginRight: "-3rem", marginTop: "-2.5rem" }}>
+    <div className="hero-breakout" style={{ maxWidth: "960px" }}>
 
       {/* ── HERO ── */}
       <div style={{
         position: "relative",
-        height: "340px",
+        height: "clamp(200px, 30vw, 340px)",
         backgroundImage: `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')`,
         backgroundSize: "cover",
         backgroundPosition: "center 40%",
@@ -67,22 +67,13 @@ export default function DashboardPage() {
         }} />
 
         {/* Hero text — sits low in the image */}
-        <div style={{
-          position: "absolute", bottom: "2.5rem", left: "3rem", right: "3rem",
-        }}>
+        <div className="hero-text-inner">
           <p style={{
             fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
             color: "rgba(255,255,255,0.7)", fontWeight: 500, marginBottom: "0.6rem",
             textShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }}>{dateStr}</p>
-          <h1 style={{
-            fontFamily: "var(--font-serif), serif",
-            fontSize: "2.75rem", fontWeight: 400,
-            letterSpacing: "-0.03em", lineHeight: 1.05,
-            color: "#fff",
-            textShadow: "0 2px 12px rgba(0,0,0,0.25)",
-            marginBottom: "0.5rem",
-          }}>{headline}</h1>
+          <h1 className="hero-headline">{headline}</h1>
           <p style={{
             fontSize: "15px", color: "rgba(255,255,255,0.8)",
             textShadow: "0 1px 4px rgba(0,0,0,0.2)",
@@ -91,7 +82,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ padding: "2.5rem 3rem" }}>
+      <div className="hero-content-inner">
 
         {/* KPIs */}
         <div className="kpi-grid-4" style={{
@@ -103,11 +94,10 @@ export default function DashboardPage() {
             { label: "Active",     value: String(active.length),       note: "in estimation" },
             { label: "Awaiting",   value: String(sent.length),         note: "pending decision" },
             { label: "Win Rate",   value: `${winRate}%`,               note: `${won.length}/${decided.length} decided` },
-          ].map(({ label, value, note }, i, arr) => (
-            <div key={label} style={{
+          ].map(({ label, value, note }) => (
+            <div key={label} className="kpi-cell" style={{
               padding: "1.5rem 1.75rem",
               background: "var(--bg)",
-              borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
             }}>
               <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.6rem" }}>{label}</p>
               <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1, marginBottom: "0.35rem" }}>{value}</p>

@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: West Crow
+        - generic [ref=e6]: Contracting
+      - navigation [ref=e7]:
+        - link "Dashboard" [ref=e8] [cursor=pointer]:
+          - /url: /
+        - link "Pipeline" [ref=e9] [cursor=pointer]:
+          - /url: /bids
+        - link "Projects" [ref=e10] [cursor=pointer]:
+          - /url: /projects
+        - link "Clients" [ref=e11] [cursor=pointer]:
+          - /url: /clients
+      - link "+ New Bid" [ref=e13] [cursor=pointer]:
+        - /url: /bids/new
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Thursday, February 26
+          - heading "$775,500 in active pipeline" [level=1] [ref=e20]
+          - paragraph [ref=e21]: 3 bids due in the next 14 days
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - paragraph [ref=e25]: Pipeline
+              - paragraph [ref=e26]: $775,500
+              - paragraph [ref=e27]: 4 open
+            - generic [ref=e28]:
+              - paragraph [ref=e29]: Active
+              - paragraph [ref=e30]: "2"
+              - paragraph [ref=e31]: in estimation
+            - generic [ref=e32]:
+              - paragraph [ref=e33]: Awaiting
+              - paragraph [ref=e34]: "2"
+              - paragraph [ref=e35]: pending decision
+            - generic [ref=e36]:
+              - paragraph [ref=e37]: Win Rate
+              - paragraph [ref=e38]: 100%
+              - paragraph [ref=e39]: 2/2 decided
+          - generic [ref=e40]:
+            - heading "On Site" [level=2] [ref=e41]
+            - link "Burnaby Secondary AbatementMetro Vancouver Schools Day 9 · 16d left $195,000 ● Active Budget 25% Timeline 36%" [ref=e43] [cursor=pointer]:
+              - /url: /projects/p2
+              - generic [ref=e44]:
+                - generic [ref=e45]: Burnaby Secondary AbatementMetro Vancouver Schools
+                - generic [ref=e46]:
+                  - generic [ref=e47]: Day 9 · 16d left
+                  - generic [ref=e48]: $195,000
+                  - generic [ref=e49]: ● Active
+              - generic [ref=e50]:
+                - generic [ref=e52]:
+                  - generic [ref=e53]: Budget
+                  - generic [ref=e54]: 25%
+                - generic [ref=e58]:
+                  - generic [ref=e59]: Timeline
+                  - generic [ref=e60]: 36%
+          - generic [ref=e63]:
+            - heading "Due in 14 days" [level=2] [ref=e64]
+            - generic [ref=e65]:
+              - link "Burnaby Office DemolitionPacific Properties Ltd. 7d $148,000 Active" [ref=e66] [cursor=pointer]:
+                - /url: /bids/b1
+                - generic [ref=e67]: Burnaby Office DemolitionPacific Properties Ltd.
+                - generic [ref=e68]:
+                  - generic [ref=e69]: 7d
+                  - generic [ref=e70]: $148,000
+                  - generic [ref=e73]: Active
+              - link "5575 Patterson Ave DemoStreet Level Contracting 10d $175,000 Sent" [ref=e74] [cursor=pointer]:
+                - /url: /bids/b6
+                - generic [ref=e75]: 5575 Patterson Ave DemoStreet Level Contracting
+                - generic [ref=e76]:
+                  - generic [ref=e77]: 10d
+                  - generic [ref=e78]: $175,000
+                  - generic [ref=e81]: Sent
+              - link "Coquitlam Retail RenoWestside Developments 12d $62,500 Sent" [ref=e82] [cursor=pointer]:
+                - /url: /bids/b2
+                - generic [ref=e83]: Coquitlam Retail RenoWestside Developments
+                - generic [ref=e84]:
+                  - generic [ref=e85]: 12d
+                  - generic [ref=e86]: $62,500
+                  - generic [ref=e89]: Sent
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - heading "Recent Bids" [level=2] [ref=e93]
+              - link "All bids →" [ref=e94] [cursor=pointer]:
+                - /url: /bids
+            - generic [ref=e95]:
+              - link "5575 Patterson Ave DemoStreet Level Contracting Mar 8, 2026 $175,000 Sent" [ref=e96] [cursor=pointer]:
+                - /url: /bids/b6
+                - generic [ref=e97]: 5575 Patterson Ave DemoStreet Level Contracting
+                - generic [ref=e98]:
+                  - generic [ref=e99]: Mar 8, 2026
+                  - generic [ref=e100]: $175,000
+                  - generic [ref=e103]: Sent
+              - link "Richmond Hotel Fit-OutStarlight Hotel Group Mar 15, 2026 $390,000 Active" [ref=e104] [cursor=pointer]:
+                - /url: /bids/b4
+                - generic [ref=e105]: Richmond Hotel Fit-OutStarlight Hotel Group
+                - generic [ref=e106]:
+                  - generic [ref=e107]: Mar 15, 2026
+                  - generic [ref=e108]: $390,000
+                  - generic [ref=e111]: Active
+              - link "Burnaby Office DemolitionPacific Properties Ltd. Mar 5, 2026 $148,000 Active" [ref=e112] [cursor=pointer]:
+                - /url: /bids/b1
+                - generic [ref=e113]: Burnaby Office DemolitionPacific Properties Ltd.
+                - generic [ref=e114]:
+                  - generic [ref=e115]: Mar 5, 2026
+                  - generic [ref=e116]: $148,000
+                  - generic [ref=e119]: Active
+              - link "Coquitlam Retail RenoWestside Developments Mar 10, 2026 $62,500 Sent" [ref=e120] [cursor=pointer]:
+                - /url: /bids/b2
+                - generic [ref=e121]: Coquitlam Retail RenoWestside Developments
+                - generic [ref=e122]:
+                  - generic [ref=e123]: Mar 10, 2026
+                  - generic [ref=e124]: $62,500
+                  - generic [ref=e127]: Sent
+              - link "Surrey Mixed-Use Phase 2Apex Construction Mar 20, 2026 $88,000 No Bid" [ref=e128] [cursor=pointer]:
+                - /url: /bids/b5
+                - generic [ref=e129]: Surrey Mixed-Use Phase 2Apex Construction
+                - generic [ref=e130]:
+                  - generic [ref=e131]: Mar 20, 2026
+                  - generic [ref=e132]: $88,000
+                  - generic [ref=e135]: No Bid
+  - alert [ref=e136]
+```

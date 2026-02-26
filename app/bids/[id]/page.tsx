@@ -12,8 +12,9 @@ const STAGE_ORDER: BidStage[] = ['invited','estimating','submitted','decision']
 const STAGE_LABEL: Record<BidStage, string> = { invited: 'Invited', estimating: 'Estimating', submitted: 'Submitted', decision: 'Decision' }
 const DOC_LABEL: Record<string, string> = { bid_docs: 'Bid Documents', drawings: 'Drawings', hazmat: 'Hazmat Report', quote_sheet: 'Quote Sheet', addendum: 'Addendum' }
 
-export default async function BidDetailPage({ params }: { params: { id: string } }) {
-  const [bid, clients] = await Promise.all([getBid(params.id), getClients()])
+export default async function BidDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const [bid, clients] = await Promise.all([getBid(id), getClients()])
   if (!bid) notFound()
 
   const client = (clients as any[]).find((c: any) => c.id === bid.client_id)

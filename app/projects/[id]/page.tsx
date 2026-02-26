@@ -45,8 +45,9 @@ function KVRow({ label, value, sub, mono }: { label: string; value: string; sub?
   )
 }
 
-export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const [project, allBids, clients] = await Promise.all([getProject(params.id), getBids(), getClients()])
+export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const [project, allBids, clients] = await Promise.all([getProject(id), getBids(), getClients()])
   if (!project) notFound()
 
   const bid    = (allBids as any[]).find((b: any) => b.id === project.bid_id)

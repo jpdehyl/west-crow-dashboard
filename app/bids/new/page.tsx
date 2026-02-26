@@ -5,7 +5,7 @@ import Link from "next/link"
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "0.7rem 1rem",
+  padding: "0.55rem 0.85rem",
   background: "var(--bg)",
   border: "1px solid var(--border)",
   borderRadius: "8px",
@@ -63,19 +63,19 @@ export default function NewBidPage() {
   }
 
   return (
-    <div style={{ maxWidth: "640px" }}>
+    <div style={{ maxWidth: "720px" }}>
       <Link href="/bids" style={{
         fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none",
-        display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1.75rem",
+        display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1rem",
       }}>
         ← Pipeline
       </Link>
 
-      <div style={{ marginBottom: "2.5rem" }}>
+      <div style={{ marginBottom: "1.25rem" }}>
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
           West Crow Contracting
         </p>
-        <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
           New Bid
         </h1>
       </div>
@@ -84,7 +84,7 @@ export default function NewBidPage() {
         <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
 
           {/* Project name */}
-          <div style={{ padding: "1.5rem 1.75rem", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border)" }}>
             <label style={labelStyle}>
               Project Name <span style={{ color: "var(--accent)" }}>*</span>
             </label>
@@ -98,7 +98,7 @@ export default function NewBidPage() {
           </div>
 
           {/* Client + Estimator */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1rem 1.25rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
               <label style={labelStyle}>Client <span style={{ color: "var(--accent)" }}>*</span></label>
               <select required name="client" style={{ ...inputStyle, cursor: "pointer" }}>
@@ -116,7 +116,7 @@ export default function NewBidPage() {
           </div>
 
           {/* Value + Deadline */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1rem 1.25rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
               <label style={labelStyle}>Bid Value (CAD) <span style={{ color: "var(--accent)" }}>*</span></label>
               <input
@@ -141,7 +141,7 @@ export default function NewBidPage() {
           </div>
 
           {/* Source */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1rem 1.25rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
               <label style={labelStyle}>Source</label>
               <select name="source" style={{ ...inputStyle, cursor: "pointer" }}>
@@ -164,7 +164,7 @@ export default function NewBidPage() {
           </div>
 
           {/* Notes */}
-          <div style={{ padding: "1.5rem 1.75rem" }}>
+          <div style={{ padding: "1rem 1.25rem" }}>
             <label style={labelStyle}>Notes</label>
             <textarea
               name="notes"

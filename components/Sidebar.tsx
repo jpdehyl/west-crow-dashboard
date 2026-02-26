@@ -8,7 +8,6 @@ const nav = [
   { href: "/bids", label: "Pipeline", icon: "📋" },
   { href: "/projects", label: "Projects", icon: "🏗" },
   { href: "/clients", label: "Clients", icon: "👥" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
 ]
 
 export default function Sidebar() {
@@ -29,6 +28,7 @@ export default function Sidebar() {
   }, [collapsed, mounted])
 
   const width = collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)"
+  const isSettings = pathname.startsWith("/settings")
 
   return (
     <aside className="sidebar-transition" style={{
@@ -100,13 +100,13 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div style={{ padding: collapsed ? "1.5rem 0.5rem 2rem" : "1.5rem 0.75rem 2rem" }}>
+      <div style={{ padding: collapsed ? "0 0.4rem 0.75rem" : "0 0.75rem 0.75rem" }}>
         <Link href="/bids/new" title={collapsed ? "+ New Bid" : undefined} style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: "0.4rem",
-          padding: "0.6rem",
+          padding: "0.55rem",
           background: "#ffffff",
           color: "#1a1a1a",
           borderRadius: "8px",
@@ -118,6 +118,43 @@ export default function Sidebar() {
           overflow: "hidden",
         }}>
           {collapsed ? "+" : "+ New Bid"}
+        </Link>
+      </div>
+
+      <div style={{
+        borderTop: "1px solid rgba(255,255,255,0.1)",
+        padding: collapsed ? "0.75rem 0.4rem 1.25rem" : "0.75rem 0.75rem 1.25rem",
+      }}>
+        <Link href="/settings" title={collapsed ? "Settings" : undefined}
+          className="nav-link"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6rem",
+            padding: collapsed ? "0.5rem 0" : "0.5rem 0.75rem",
+            borderRadius: "7px",
+            textDecoration: "none",
+            justifyContent: collapsed ? "center" : "flex-start",
+            color: isSettings ? "#ffffff" : "rgba(255,255,255,0.55)",
+            background: isSettings ? "rgba(255,255,255,0.1)" : "transparent",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}>
+          <span style={{
+            width: 28, height: 28, borderRadius: "50%",
+            background: "rgba(255,255,255,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "13px", flexShrink: 0,
+            color: "rgba(255,255,255,0.7)",
+            fontWeight: 600,
+          }}>
+            JW
+          </span>
+          {!collapsed && (
+            <span className="sidebar-fade" style={{ fontSize: "13px", fontWeight: 400 }}>
+              Jordan West
+            </span>
+          )}
         </Link>
       </div>
     </aside>

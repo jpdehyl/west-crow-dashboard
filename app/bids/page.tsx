@@ -96,15 +96,15 @@ export default function PipelinePage() {
   ]
 
   return (
-    <div style={{ maxWidth: "1100px" }}>
+    <div>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <div>
           <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
             {loading ? "Loading…" : `${bids.length} bids · ${formatCurrency(pipeline)} in pipeline`}
           </p>
-          <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             Pipeline
           </h1>
         </div>
@@ -136,7 +136,7 @@ export default function PipelinePage() {
           const isActive = filterStatus === key
           return (
             <button key={key} onClick={() => setFilterStatus(isActive ? null : key)} style={{
-              flex: 1, padding: "1rem 1.25rem", background: isActive ? "var(--ink)" : "var(--bg)",
+              flex: 1, padding: "0.75rem 1rem", background: isActive ? "var(--ink)" : "var(--bg)",
               borderRight: i < STAGES.length - 1 ? "1px solid var(--border)" : "none",
               border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit",
               transition: "background 0.12s",
@@ -145,7 +145,7 @@ export default function PipelinePage() {
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "white" : STATUS_COLOR[key], display: "inline-block" }} />
                 <span style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: isActive ? "rgba(255,255,255,0.7)" : "var(--ink-faint)", fontWeight: 500 }}>{label}</span>
               </div>
-              <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.5rem", color: isActive ? "white" : "var(--ink)", letterSpacing: "-0.02em" }}>
+              <p style={{ fontSize: "1.5rem", fontWeight: 600, color: isActive ? "white" : "var(--ink)", letterSpacing: "-0.02em" }}>
                 {loading ? "—" : count}
               </p>
               {val > 0 && <p style={{ fontSize: "11px", color: isActive ? "rgba(255,255,255,0.6)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{formatCurrency(val)}</p>}
@@ -202,7 +202,7 @@ export default function PipelinePage() {
                 <tr>
                   {colHeaders.map(({ key, label, align }) => (
                     <th key={key} onClick={() => handleSort(key)} style={{
-                      textAlign: align, padding: "0.7rem 1.5rem",
+                      textAlign: align, padding: "0.55rem 1rem",
                       fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
                       color: sortKey === key ? "var(--accent)" : "var(--ink-faint)",
                       fontWeight: 500, borderBottom: "1px solid var(--border)",
@@ -211,10 +211,10 @@ export default function PipelinePage() {
                       {label}<SortIcon col={key} />
                     </th>
                   ))}
-                  <th style={{ textAlign: "left", padding: "0.7rem 1.5rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Stage</th>
-                  <th style={{ textAlign: "left", padding: "0.7rem 1.5rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Est.</th>
+                  <th style={{ textAlign: "left", padding: "0.55rem 1rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Stage</th>
+                  <th style={{ textAlign: "left", padding: "0.55rem 1rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Est.</th>
                   <th onClick={() => handleSort('margin_pct')} style={{
-                    textAlign: "right", padding: "0.7rem 1.5rem",
+                    textAlign: "right", padding: "0.55rem 1rem",
                     fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
                     color: sortKey === 'margin_pct' ? "var(--accent)" : "var(--ink-faint)",
                     fontWeight: 500, borderBottom: "1px solid var(--border)",
@@ -231,20 +231,20 @@ export default function PipelinePage() {
                   const border = i < filtered.length - 1 ? "1px solid var(--border)" : "none"
                   return (
                     <tr key={bid.id} className="row-hover">
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, whiteSpace: "nowrap" }}>
                         <Link href={`/bids/${bid.id}`} style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>{bid.project_name}</Link>
                       </td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.client}</td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, textAlign: "right", fontWeight: 500, fontFamily: "var(--font-serif), serif", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.client}</td>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>
                         {formatCurrency(bid.bid_value)}
                       </td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, whiteSpace: "nowrap" }}>
                         <span style={{ color: urgent ? "var(--terra)" : "var(--ink-muted)" }}>{formatDate(bid.deadline)}</span>
                         {urgent && <span style={{ marginLeft: "0.4rem", fontSize: "11px", background: "var(--terra-light)", color: "var(--terra)", padding: "1px 5px", borderRadius: "4px", fontWeight: 500 }}>{days}d</span>}
                       </td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
-                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
+                      <td style={{ padding: "0.55rem 1rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
                         {bid.margin_pct != null ? `${bid.margin_pct}%` : "—"}
                       </td>
                     </tr>
@@ -279,11 +279,11 @@ export default function PipelinePage() {
                     const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)
                     return (
                       <Link key={bid.id} href={`/bids/${bid.id}`} style={{ textDecoration: "none" }}>
-                        <div className="row-hover" style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.1rem", cursor: "pointer", borderTop: "3px solid var(--accent)" }}>
+                        <div className="row-hover" style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "0.85rem 1rem", cursor: "pointer", borderTop: "3px solid var(--accent)" }}>
                           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)", marginBottom: "0.3rem", lineHeight: 1.3 }}>{bid.project_name}</p>
                           <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginBottom: "0.85rem" }}>{bid.client}</p>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "1rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatCurrency(bid.bid_value)}</span>
+                            <span style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatCurrency(bid.bid_value)}</span>
                             {urgent ? (
                               <span style={{ fontSize: "11px", background: "var(--terra-light)", color: "var(--terra)", padding: "2px 7px", borderRadius: "4px", fontWeight: 600 }}>{days}d</span>
                             ) : (

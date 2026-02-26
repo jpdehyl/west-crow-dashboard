@@ -24,14 +24,14 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
   const currentStageIdx = Math.max(...(bid.timeline as any[]).map((e: any) => STAGE_ORDER.indexOf(e.stage)))
 
   return (
-    <div style={{ maxWidth: "860px" }}>
-      <Link href="/bids" style={{ fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1.75rem" }}>
+    <div>
+      <Link href="/bids" style={{ fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1rem" }}>
         ← Pipeline
       </Link>
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.5rem" }}>
         <div>
-          <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.4rem" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.4rem" }}>
             {bid.project_name}
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -40,7 +40,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.75rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          <p style={{ fontSize: "1.35rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             {formatCurrency(bid.bid_value)}
           </p>
           <StatusDot status={bid.status} />
@@ -48,7 +48,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Timeline strip */}
-      <div style={{ display: "flex", alignItems: "flex-start", margin: "2rem 0", padding: "1.5rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", margin: "1.25rem 0", padding: "1rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)" }}>
         {STAGE_ORDER.map((stage, i) => {
           const event = (bid.timeline as any[]).find((e: any) => e.stage === stage)
           const isComplete = completedStages.has(stage)
@@ -78,13 +78,13 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "2.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "1.5rem" }}>
         {[
           { label: "Deadline",  value: formatDate(bid.deadline), sub: urgent ? `${days} days left` : bid.status === 'won' ? 'Closed' : '' },
           { label: "Estimator", value: bid.estimator, sub: "West Crow" },
           { label: "Margin",    value: bid.margin_pct != null ? `${bid.margin_pct}%` : "—", sub: bid.margin_pct ? "on win" : "pending" },
         ].map(({ label, value, sub }) => (
-          <div key={label} style={{ background: "var(--bg)", padding: "1.25rem 1.5rem" }}>
+          <div key={label} style={{ background: "var(--bg)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
             <p style={{ fontSize: "1.25rem", fontFamily: "var(--font-serif), serif", color: "var(--ink)", letterSpacing: "-0.02em" }}>{value}</p>
             {sub && <p style={{ fontSize: "11px", color: urgent && label === "Deadline" ? "var(--terra)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{sub}</p>}
@@ -93,13 +93,13 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Status Actions */}
-      <div style={{ marginBottom: "2.5rem" }}>
+      <div style={{ marginBottom: "1.5rem" }}>
         <BidActions bidId={bid.id} currentStatus={bid.status as any} currentValue={bid.bid_value} />
       </div>
 
       {/* Notes */}
       {bid.notes && (
-        <div style={{ marginBottom: "2.5rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Notes</p>
           <p style={{ fontSize: "14px", color: "var(--ink-muted)", lineHeight: 1.7, background: "var(--bg-subtle)", padding: "1.25rem 1.5rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
             {bid.notes}
@@ -109,7 +109,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
 
       {/* Documents */}
       {bid.documents && bid.documents.length > 0 && (
-        <div style={{ marginBottom: "2.5rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
             {(bid.documents as any[]).map((doc: any, i: number) => (
@@ -145,7 +145,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
 
       {/* Won → link to project */}
       {bid.status === 'won' && (
-        <div style={{ marginTop: "2.5rem", padding: "1.25rem 1.5rem", background: "var(--sage-light)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ marginTop: "1.5rem", padding: "1.25rem 1.5rem", background: "var(--sage-light)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--sage)", marginBottom: "0.2rem" }}>This bid was won ✓</p>
             <p style={{ fontSize: "12px", color: "var(--sage)" }}>View the active project — daily logs, costs, and progress.</p>

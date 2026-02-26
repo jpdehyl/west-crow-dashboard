@@ -20,21 +20,21 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
   const totalPipeline = active.reduce((s,b) => s + b.bid_value, 0)
 
   return (
-    <div style={{ maxWidth: "860px" }}>
+    <div>
       <Link href="/clients" style={{
         fontSize: "13px", color: "var(--ink-faint)", textDecoration: "none",
-        display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1.75rem",
+        display: "inline-flex", alignItems: "center", gap: "0.35rem", marginBottom: "1rem",
       }}>
         ← Clients
       </Link>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <div>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>
             {client.type} client
           </p>
-          <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.5rem" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.5rem" }}>
             {client.name}
           </h1>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
@@ -69,7 +69,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1px",
         background: "var(--border)", border: "1px solid var(--border)",
-        borderRadius: "12px", overflow: "hidden", marginBottom: "2.5rem",
+        borderRadius: "12px", overflow: "hidden", marginBottom: "1.5rem",
       }}>
         {[
           { label: "Total Won",    value: formatCurrency(totalWon),              sub: `${won.length} project${won.length !== 1 ? 's' : ''}` },
@@ -77,9 +77,9 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           { label: "Win Rate",     value: winRate !== null ? `${winRate}%` : "—", sub: `${decided.length} decided` },
           { label: "Total Bids",   value: String(clientBids.length),             sub: "all time" },
         ].map(({ label, value, sub }) => (
-          <div key={label} style={{ background: "var(--bg)", padding: "1.25rem 1.5rem" }}>
+          <div key={label} style={{ background: "var(--bg)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
-            <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.5rem", color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
+            <p style={{ fontSize: "1.35rem", color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
             <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.3rem" }}>{sub}</p>
           </div>
         ))}
@@ -87,7 +87,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
 
       {/* Active Projects */}
       {clientProjects.length > 0 && (
-        <div style={{ marginBottom: "2.5rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", fontWeight: 500, marginBottom: "1rem" }}>
             Active Projects
           </p>
@@ -98,7 +98,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
               const pct = Math.round(spent / budget * 100)
               return (
                 <Link key={p.id} href={`/projects/${p.id}`} className="row-hover" style={{
-                  display: "block", padding: "1.25rem 1.5rem",
+                  display: "block", padding: "1rem 1.25rem",
                   background: "var(--bg)", border: "1px solid var(--border)",
                   borderRadius: "10px", textDecoration: "none",
                 }}>
@@ -142,7 +142,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           ) : clientBids.map((bid, i) => (
             <Link key={bid.id} href={`/bids/${bid.id}`} className="row-hover" style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "0.9rem 1.25rem", background: "var(--bg)", textDecoration: "none",
+              padding: "0.7rem 1rem", background: "var(--bg)", textDecoration: "none",
               borderBottom: i < clientBids.length - 1 ? "1px solid var(--border)" : "none",
             }}>
               <div>

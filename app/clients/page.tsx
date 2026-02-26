@@ -5,12 +5,12 @@ import Link from "next/link"
 
 export default function ClientsPage() {
   return (
-    <div style={{ maxWidth: "960px" }}>
-      <div style={{ marginBottom: "2.5rem" }}>
+    <div>
+      <div style={{ marginBottom: "1.25rem" }}>
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
           {CLIENTS.length} clients
         </p>
-        <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
           Clients
         </h1>
       </div>
@@ -31,7 +31,7 @@ export default function ClientsPage() {
             }}>
               <Link href={`/clients/${client.id}`} className="row-hover" style={{
                 display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-                padding: "1.5rem 1.75rem", textDecoration: "none",
+                padding: "1rem 1.25rem", textDecoration: "none",
               }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "0.25rem" }}>

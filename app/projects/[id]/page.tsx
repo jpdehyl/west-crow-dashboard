@@ -39,7 +39,7 @@ function KVRow({ label, value, sub, mono }: { label: string; value: string; sub?
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0.55rem 0", borderBottom: "1px solid var(--border)" }}>
       <span style={{ fontSize: "12px", color: "var(--ink-faint)", fontWeight: 500, letterSpacing: "0.04em" }}>{label}</span>
-      <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", fontFamily: mono ? "var(--font-serif), serif" : "inherit", letterSpacing: mono ? "-0.02em" : "inherit" }}>{value}</span>
+      <span style={{ fontSize: "13px", fontWeight: mono ? 600 : 500, color: "var(--ink)", letterSpacing: mono ? "-0.02em" : "inherit" }}>{value}</span>
       {sub && <span style={{ fontSize: "11px", color: "var(--ink-faint)", marginLeft: "0.5rem" }}>{sub}</span>}
     </div>
   )
@@ -115,7 +115,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>
               {project.client} · {project.estimator}{project.superintendent && ` · Oscar (super)`}
             </p>
-            <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1.1, marginBottom: "0.5rem" }}>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1, marginBottom: "0.5rem" }}>
               {project.project_name}
             </h1>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
@@ -135,7 +135,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.04em", color: "var(--ink)" }}>{formatCurrency(project.contract_value)}</p>
+            <p style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)" }}>{formatCurrency(project.contract_value)}</p>
             <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.2rem" }}>contract value</p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         ].map(({ label, value, sub, warn }) => (
           <div key={label} style={{ background: "var(--bg)", padding: "1.25rem 1.5rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
-            <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.6rem", color: warn ? "var(--terra)" : "var(--ink)", letterSpacing: "-0.03em", lineHeight: 1 }}>{value}</p>
+            <p style={{ fontSize: "1.5rem", fontWeight: 600, color: warn ? "var(--terra)" : "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
             <p style={{ fontSize: "11px", color: warn ? "var(--terra)" : "var(--ink-faint)", marginTop: "0.3rem" }}>{sub}</p>
           </div>
         ))}
@@ -284,7 +284,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <div key={log.id || i} style={{ background: "var(--bg)", border: "1px solid var(--border)", borderLeft: log.issues ? "3px solid var(--terra)" : "3px solid var(--border)", borderRadius: "0 10px 10px 0", overflow: "hidden" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.75rem 1.25rem", background: "var(--bg-subtle)", borderBottom: "1px solid var(--border)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                      <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "1rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatDateShort(log.date)}</span>
+                      <span style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatDateShort(log.date)}</span>
                       <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)" }}>Day {dayNum}</span>
                       {wxIcon && <span style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{wxIcon} {log.weather}</span>}
                     </div>
@@ -363,12 +363,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   </span>
                 </td>
                 <td style={{ padding: "0.75rem 1.25rem", borderBottom: i < project.costs.length-1 ? "1px solid var(--border)" : "none", color: "var(--ink-faint)" }}>{cost.vendor || "—"}</td>
-                <td style={{ padding: "0.75rem 1.25rem", borderBottom: i < project.costs.length-1 ? "1px solid var(--border)" : "none", textAlign: "right", fontFamily: "var(--font-serif), serif", color: "var(--ink)", fontWeight: 500 }}>{formatCurrency(cost.amount)}</td>
+                <td style={{ padding: "0.75rem 1.25rem", borderBottom: i < project.costs.length-1 ? "1px solid var(--border)" : "none", textAlign: "right", color: "var(--ink)", fontWeight: 600 }}>{formatCurrency(cost.amount)}</td>
               </tr>
             ))}
             <tr style={{ background: "var(--bg-subtle)" }}>
               <td colSpan={4} style={{ padding: "0.75rem 1.25rem", textAlign: "right", fontSize: "12px", fontWeight: 600, color: "var(--ink-muted)", letterSpacing: "0.05em", textTransform: "uppercase", borderTop: "1px solid var(--border)" }}>Total spent</td>
-              <td style={{ padding: "0.75rem 1.25rem", textAlign: "right", fontFamily: "var(--font-serif), serif", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600, borderTop: "1px solid var(--border)" }}>{formatCurrency(totalCosts)}</td>
+              <td style={{ padding: "0.75rem 1.25rem", textAlign: "right", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600, borderTop: "1px solid var(--border)" }}>{formatCurrency(totalCosts)}</td>
             </tr>
           </tbody>
         </table>
@@ -408,7 +408,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                       <KVRow label={`Holdback (${inv.holdback_pct}%)`} value={`− ${formatCurrency(holdbackAmt)}`} />
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0.65rem 0", borderBottom: "2px solid var(--ink)" }}>
                         <span style={{ fontSize: "12px", color: "var(--ink)", fontWeight: 700 }}>Net billing</span>
-                        <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatCurrency(netAmt)}</span>
+                        <span style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{formatCurrency(netAmt)}</span>
                       </div>
                     </div>
                     <div>
@@ -443,7 +443,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               ].map(({ label, value }) => (
                 <div key={label} style={{ background: "var(--bg)", padding: "1rem 1.25rem" }}>
                   <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.3rem" }}>{label}</p>
-                  <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>{value}</p>
+                  <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{value}</p>
                 </div>
               ))}
             </div>

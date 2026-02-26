@@ -8,20 +8,28 @@ const API_KEY = process.env.SHEETS_API_KEY || 'wc_2026_xK9mP'
 
 async function call(path: string, method = 'GET', body?: object) {
   if (!API_URL) return null
-  const url = new URL(API_URL)
-  url.searchParams.set('key', API_KEY)
-  url.searchParams.set('path', path)
-  if (method !== 'GET' && method !== 'POST') {
-    url.searchParams.set('method', method)
+  try {
+    const url = new URL(API_URL)
+    url.searchParams.set('key', API_KEY)
+    url.searchParams.set('path', path)
+    if (method !== 'GET' && method !== 'POST') {
+      url.searchParams.set('method', method)
+    }
+    const res = await fetch(url.toString(), {
+      method: method === 'GET' ? 'GET' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: 'no-store',
+      redirect: 'follow',
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    // If GAS returns an error object, treat as miss → fallback to seed
+    if (data && typeof data === 'object' && !Array.isArray(data) && data.error) return null
+    return data
+  } catch {
+    return null
   }
-  const res = await fetch(url.toString(), {
-    method: method === 'GET' ? 'GET' : 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`Sheets API error: ${res.status}`)
-  return res.json()
 }
 
 export async function getBids() {

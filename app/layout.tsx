@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={dmSans.variable}
         style={{ fontFamily: "var(--font-sans), sans-serif" }}>
         <div style={{ display: "flex", minHeight: "100vh" }}>
-          {/* Desktop sidebar */}
+          {/* Desktop sidebar — hidden on mobile via .sidebar CSS class */}
           <div className="sidebar">
             <Sidebar />
           </div>

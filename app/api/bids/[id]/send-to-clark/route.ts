@@ -13,10 +13,21 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const bid = await getBid(id) as any
   if (!bid) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  // 1. Save Dropbox folder to bid if provided
-  if (dropboxFolder) {
-    await updateBid(id, { dropbox_folder: dropboxFolder })
+  // 1. Save Dropbox folder + set estimate status to clark_working
+  const existingEstimate = bid.estimate_data ? (() => { try { return JSON.parse(bid.estimate_data) } catch { return {} } })() : {}
+  const updatedEstimate = {
+    ...existingEstimate,
+    meta: {
+      ...(existingEstimate.meta ?? {}),
+      status: "clark_working",
+      clark_triggered_at: new Date().toISOString(),
+      prepared_by: "Clark",
+    },
   }
+  await updateBid(id, {
+    ...(dropboxFolder ? { dropbox_folder: dropboxFolder } : {}),
+    estimate_data: JSON.stringify(updatedEstimate),
+  })
 
   // 2. Add timeline entry
   await addBidTimeline(id, {

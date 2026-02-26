@@ -4,7 +4,22 @@ import { useRouter } from "next/navigation"
 import {
   DEFAULT_SECTIONS, DEFAULT_SUBTRADES, DEFAULT_CONFIG,
   type Section, type SubtradeItem, type EstimateConfig, type LineItem,
+  type EstimateMeta, type Assumption, type AssumptionSeverity,
 } from "@/lib/estimate-data"
+
+const SEV_STYLE: Record<AssumptionSeverity, { bg: string; color: string; label: string; icon: string }> = {
+  flag:  { bg: "#fff5f5", color: "#c0392b", label: "Flag",  icon: "🚩" },
+  warn:  { bg: "#fffbf0", color: "#b8860b", label: "Warn",  icon: "⚠️" },
+  info:  { bg: "#f0f7ff", color: "#2563eb", label: "Info",  icon: "ℹ️" },
+}
+
+const DEFAULT_META: EstimateMeta = {
+  status: "clark_draft",
+  clark_notes: "",
+  prepared_by: "Clark",
+  prepared_at: new Date().toISOString(),
+  assumptions: [],
+}
 
 // ── Calculation ─────────────────────────────────────────────────────────────
 // ⚠️ Clark's rule: has_material=false for Mob (010001) and Demob (010315)
@@ -93,6 +108,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       return s ? { ...def, units: Number(s.units) || 0, unit_cost: Number(s.unit_cost) || def.unit_cost, active: s.active !== false, notes: s.notes || "" } : def
     })
   })
+  const [meta, setMeta] = useState<EstimateMeta>(saved?.meta ?? DEFAULT_META)
 
   const dfTotal = deHylForces(sections, cfg)
   const stTotal = subtradesTotal(subtrades, cfg.subtrade_markup)
@@ -126,13 +142,37 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       await fetch(`/api/bids/${bidId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg, sections, subtrades, grand_total: gt }),
+        body: JSON.stringify({ config: cfg, sections, subtrades, meta, grand_total: gt }),
       })
       router.refresh()
     } finally {
       setSaving(false)
     }
   }
+
+  async function handleApprove() {
+    const approved: EstimateMeta = {
+      ...meta,
+      status: "approved",
+      approved_by: "JP",
+      approved_at: new Date().toISOString(),
+      assumptions: meta.assumptions.map(a => ({ ...a, resolved: true })),
+    }
+    setMeta(approved)
+    setSaving(true)
+    try {
+      await fetch(`/api/bids/${bidId}/estimate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: cfg, sections, subtrades, meta: approved, grand_total: gt }),
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const unresolvedFlags = meta.assumptions.filter(a => !a.resolved && a.severity === "flag").length
+  const unresolvedWarns = meta.assumptions.filter(a => !a.resolved && a.severity === "warn").length
 
   async function handleApply() {
     setApplying(true)
@@ -166,6 +206,93 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
           </button>
         </div>
       </div>
+
+      {/* ── Clark Review Banner ── */}
+      {meta.status === "clark_draft" && (
+        <div style={{ marginBottom: "1.25rem", padding: "1rem 1.25rem", background: "#fffbf0", border: "1px solid #f0d060", borderRadius: "10px", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span style={{ fontSize: "1.25rem" }}>📐</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "#92660a", marginBottom: "0.2rem" }}>
+              Clark Draft — Pending Your Review
+            </p>
+            <p style={{ fontSize: "12px", color: "#b8860b" }}>
+              {unresolvedFlags > 0 && `${unresolvedFlags} flag${unresolvedFlags > 1 ? "s" : ""} need your decision. `}
+              {unresolvedWarns > 0 && `${unresolvedWarns} warning${unresolvedWarns > 1 ? "s" : ""}. `}
+              Review assumptions below before approving.
+            </p>
+          </div>
+          <button
+            onClick={handleApprove}
+            disabled={saving || unresolvedFlags > 0}
+            title={unresolvedFlags > 0 ? "Resolve all 🚩 flags before approving" : "Approve Clark's estimate"}
+            style={{ padding: "0.55rem 1.25rem", background: unresolvedFlags > 0 ? "#e8e1d6" : "#3d8c5c", color: unresolvedFlags > 0 ? "#999" : "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 600, cursor: unresolvedFlags > 0 ? "not-allowed" : "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+            {unresolvedFlags > 0 ? `${unresolvedFlags} flag${unresolvedFlags > 1 ? "s" : ""} remaining` : "✓ Approve Estimate"}
+          </button>
+        </div>
+      )}
+      {meta.status === "approved" && (
+        <div style={{ marginBottom: "1.25rem", padding: "0.85rem 1.25rem", background: "#f0faf4", border: "1px solid #3d8c5c", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{ color: "#3d8c5c", fontSize: "1.1rem" }}>✓</span>
+          <p style={{ fontSize: "13px", fontWeight: 500, color: "#3d8c5c" }}>
+            Approved by JP{meta.approved_at ? ` · ${new Date(meta.approved_at).toLocaleDateString("en-CA")}` : ""} — Ready for BuilderTrend
+          </p>
+          <button
+            onClick={() => setMeta(m => ({ ...m, status: "clark_draft" }))}
+            style={{ marginLeft: "auto", fontSize: "12px", color: "#3d8c5c", background: "none", border: "1px solid #3d8c5c", borderRadius: "6px", padding: "0.3rem 0.75rem", cursor: "pointer", fontFamily: "inherit" }}>
+            Reopen
+          </button>
+        </div>
+      )}
+
+      {/* ── Clark Notes ── */}
+      {(meta.clark_notes || meta.status === "clark_draft") && (
+        <div style={{ marginBottom: "1.25rem", padding: "1rem 1.25rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px" }}>
+          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>📝 Clark's Notes</p>
+          <textarea
+            value={meta.clark_notes}
+            onChange={e => setMeta(m => ({ ...m, clark_notes: e.target.value }))}
+            placeholder="Clark will fill this in — scope summary, key risks, anything JP should know before reviewing…"
+            style={{ width: "100%", minHeight: "64px", padding: "0.6rem 0.75rem", fontSize: "13px", fontFamily: "inherit", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "7px", color: "var(--ink)", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
+          />
+        </div>
+      )}
+
+      {/* ── Assumptions & Flags ── */}
+      {meta.assumptions.length > 0 && (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.6rem" }}>
+            Assumptions & Flags ({meta.assumptions.filter(a => !a.resolved).length} unresolved)
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            {meta.assumptions.map((a) => {
+              const sty = SEV_STYLE[a.severity]
+              return (
+                <div key={a.id} style={{
+                  display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.75rem 1rem",
+                  background: a.resolved ? "var(--bg-subtle)" : sty.bg,
+                  border: `1px solid ${a.resolved ? "var(--border)" : sty.color + "44"}`,
+                  borderRadius: "8px", opacity: a.resolved ? 0.6 : 1,
+                }}>
+                  <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: "1px" }}>{sty.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: "13px", color: a.resolved ? "var(--ink-faint)" : sty.color, fontWeight: 500, marginBottom: "0.2rem", textDecoration: a.resolved ? "line-through" : "none" }}>
+                      {a.text}
+                    </p>
+                    {a.source && (
+                      <p style={{ fontSize: "11px", color: "var(--ink-faint)", fontStyle: "italic" }}>Source: {a.source}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setMeta(m => ({ ...m, assumptions: m.assumptions.map(x => x.id === a.id ? { ...x, resolved: !x.resolved } : x) }))}
+                    style={{ fontSize: "11px", padding: "0.3rem 0.65rem", background: a.resolved ? "var(--border)" : sty.color, color: a.resolved ? "var(--ink-faint)" : "#fff", border: "none", borderRadius: "5px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {a.resolved ? "Unresolve" : "Resolve ✓"}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Rate Config ── */}
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", padding: "0.85rem 1.25rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px", alignItems: "center", flexWrap: "wrap" }}>

@@ -42,6 +42,32 @@ export interface EstimateConfig {
   subtrade_markup:  number   // default 20% (separate from DeHyl margin)
 }
 
+// ── Clark's review layer ───────────────────────────────────────────────────
+// Clark pre-populates assumptions + flags. JP reviews before approving.
+// status: 'clark_draft' → JP reviews → 'approved' → Clark fills BuilderTrend
+
+export type AssumptionSeverity = "flag" | "warn" | "info"
+
+export interface Assumption {
+  id: string
+  severity: AssumptionSeverity  // flag = needs JP decision, warn = risk, info = FYI
+  source: string                 // e.g. "Hazmat Report p.4 — confirmed ACM VCT"
+  text: string                   // the assumption or flag
+  resolved: boolean              // JP checks off after reviewing
+}
+
+export type EstimateStatus = "clark_draft" | "in_review" | "approved" | "sent"
+
+export interface EstimateMeta {
+  status: EstimateStatus
+  clark_notes: string            // Clark's overall notes for JP
+  prepared_by: string            // "Clark" or estimator name
+  prepared_at: string            // ISO timestamp
+  approved_by?: string
+  approved_at?: string
+  assumptions: Assumption[]
+}
+
 export const DEFAULT_CONFIG: EstimateConfig = {
   cost_per_man_day: 296,
   material_pct: 18,

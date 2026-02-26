@@ -55,6 +55,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
               documents={(bid.documents ?? []) as any[]}
               estimateData={(bid as any).estimate_data ?? null}
               dropboxFolder={(bid as any).dropbox_folder ?? ""}
+              bidStatus={bid.status}
             />
             <EditBidForm bid={bid as any} clients={clients as any[]} />
             <CloneBidButton bidId={bid.id} />

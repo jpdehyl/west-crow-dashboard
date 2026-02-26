@@ -4,13 +4,27 @@ import { useRouter } from "next/navigation"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_draft" | "approved"
+type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_draft" | "approved" | "view_only" | "hidden"
 
 type DocEntry = { name: string; url: string; type: string }
 
+// Bid statuses where the estimate phase is already past — don't prompt Clark
+const CLOSED_STATUSES = ["won", "lost", "no-bid", "sent"]
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function getState(documents: DocEntry[], estimateData: string | null): EstimateState {
+function getState(documents: DocEntry[], estimateData: string | null, bidStatus: string): EstimateState {
+  // Bid is already past the estimate stage — show view-only or nothing
+  if (CLOSED_STATUSES.includes(bidStatus)) {
+    if (!estimateData) return "hidden"         // won/lost with no estimate data (legacy seed bids)
+    try {
+      const parsed = JSON.parse(estimateData)
+      const status = parsed?.meta?.status
+      if (status === "approved") return "approved"
+    } catch {}
+    return "view_only"
+  }
+
   const hasDrawings = documents.some(d => d.type === "drawings")
   const hasScope    = documents.some(d => d.type === "bid_docs")
 
@@ -54,7 +68,7 @@ function getClarkTriggeredAt(estimateData: string | null): string | null {
 
 // ── State config ──────────────────────────────────────────────────────────
 
-const STATE_CONFIG: Record<EstimateState, {
+const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
   label: string
   icon: string
   bg: string
@@ -103,6 +117,14 @@ const STATE_CONFIG: Record<EstimateState, {
     color: "#3d8c5c",
     border: "#3d8c5c",
     description: "Approved — ready for BuilderTrend",
+  },
+  view_only: {
+    label: "View Estimate",
+    icon: "📐",
+    bg: "var(--bg-subtle)",
+    color: "var(--ink-muted)",
+    border: "var(--border)",
+    description: "Estimate on file",
   },
 }
 
@@ -241,28 +263,33 @@ function StartEstimateModal({
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function EstimateStatusButton({
-  bidId, bidName, documents, estimateData, dropboxFolder,
+  bidId, bidName, documents, estimateData, dropboxFolder, bidStatus,
 }: {
   bidId: string
   bidName: string
   documents: DocEntry[]
   estimateData: string | null
   dropboxFolder: string
+  bidStatus: string
 }) {
   const router = useRouter()
   const [modal, setModal] = useState<"missing" | "start" | null>(null)
 
-  const state    = getState(documents, estimateData)
-  const cfg      = STATE_CONFIG[state]
+  const state = getState(documents, estimateData, bidStatus)
+
+  // Don't render anything for legacy closed bids with no estimate data
+  if (state === "hidden") return null
+
+  const cfg = STATE_CONFIG[state as Exclude<EstimateState, "hidden">]
   const missing  = getMissingDocs(documents)
   const flags    = getUnresolvedFlags(estimateData)
   const triggeredAt = getClarkTriggeredAt(estimateData)
 
   function handleClick() {
     if (cfg.disabled) return
-    if (state === "no_quantities") { setModal("missing"); return }
-    if (state === "ready")         { setModal("start");   return }
-    if (state === "clark_draft" || state === "approved") {
+    if (state === "no_quantities")                                   { setModal("missing"); return }
+    if (state === "ready")                                           { setModal("start");   return }
+    if (state === "clark_draft" || state === "approved" || state === "view_only") {
       router.push(`/bids/${bidId}/estimate`)
     }
   }

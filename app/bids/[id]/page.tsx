@@ -5,6 +5,7 @@ import BidActions from "@/components/BidActions"
 import CloneBidButton from "@/components/CloneBidButton"
 import AddDocumentForm from "@/components/AddDocumentForm"
 import EditBidForm from "@/components/EditBidForm"
+import SendToClarkButton from "@/components/SendToClarkButton"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -48,7 +49,13 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <StatusDot status={bid.status} />
-            <Link href={`/bids/${bid.id}/estimate`} style={{ padding: "0.5rem 1rem", background: "var(--ink)", color: "var(--bg)", borderRadius: "7px", fontSize: "13px", fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <SendToClarkButton
+              bidId={bid.id}
+              bidName={bid.project_name}
+              documents={(bid.documents ?? []) as any[]}
+              dropboxFolder={(bid as any).dropbox_folder ?? ""}
+            />
+            <Link href={`/bids/${bid.id}/estimate`} style={{ padding: "0.5rem 1rem", background: "var(--bg-subtle)", color: "var(--ink)", border: "1px solid var(--border)", borderRadius: "7px", fontSize: "13px", fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: "0.4rem" }}>
               📐 Estimate
             </Link>
             <EditBidForm bid={bid as any} clients={clients as any[]} />

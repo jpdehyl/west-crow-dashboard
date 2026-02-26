@@ -50,6 +50,10 @@ function route(e, method) {
     const docM = path.match(/^bids\/([^/]+)\/documents$/)
     if (docM && method === 'POST') return out(addDocument(docM[1], body))
 
+    // BID TIMELINE (manual log entry)
+    const tlM = path.match(/^bids\/([^/]+)\/timeline$/)
+    if (tlM && method === 'POST') return out(addBidTimeline(tlM[1], body))
+
     // CLIENTS
     if (path === 'clients' && method === 'GET')  return out(getClients())
     if (path === 'clients' && method === 'POST') return out(createClient(body))
@@ -135,16 +139,17 @@ function createBid(data) {
   const id  = 'b' + Date.now()
   const bid = {
     id,
-    project_name: data.project_name,
-    client:       data.client,
-    client_id:    data.client_id || '',
-    bid_value:    data.bid_value,
-    deadline:     data.deadline,
-    status:       'active',
-    margin_pct:   '',
-    estimator:    data.estimator || 'JP',
-    notes:        data.notes || '',
-    created_at:   new Date().toISOString(),
+    project_name:    data.project_name,
+    client:          data.client,
+    client_id:       data.client_id || '',
+    bid_value:       data.bid_value,
+    deadline:        data.deadline,
+    status:          'active',
+    margin_pct:      '',
+    estimator:       data.estimator || 'JP',
+    notes:           data.notes || '',
+    dropbox_folder:  data.dropbox_folder || '',
+    created_at:      new Date().toISOString(),
   }
   appendRow('Bids', bid)
   appendRow('BidTimeline', {
@@ -157,7 +162,7 @@ function createBid(data) {
 }
 
 function updateBid(id, data) {
-  const allowed = ['status','project_name','client','client_id','bid_value','deadline','margin_pct','notes','estimator','estimate_data']
+  const allowed = ['status','project_name','client','client_id','bid_value','deadline','margin_pct','notes','estimator','estimate_data','dropbox_folder']
   const updates = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)))
   updateCells('Bids', 'id', id, updates)
 
@@ -275,6 +280,19 @@ function addDocument(bidId, data) {
   return doc
 }
 
+function addBidTimeline(bidId, data) {
+  const entry = {
+    id:     uid('tl'),
+    bid_id: bidId,
+    stage:  data.stage || 'estimating',
+    date:   today(),
+    note:   data.note || '',
+    by:     data.by   || 'system',
+  }
+  appendRow('BidTimeline', entry)
+  return entry
+}
+
 function createClient(data) {
   const client = {
     id:           'c' + Date.now(),
@@ -295,7 +313,7 @@ function createClient(data) {
 function setup() {
   const spreadsheet = ss()
   const TABS = {
-    Bids:         ['id','project_name','client','client_id','bid_value','deadline','status','margin_pct','estimator','notes','created_at','estimate_data'],
+    Bids:         ['id','project_name','client','client_id','bid_value','deadline','status','margin_pct','estimator','notes','dropbox_folder','created_at','estimate_data'],
     BidTimeline:  ['id','bid_id','stage','date','note','by'],
     BidDocuments: ['id','bid_id','name','url','type'],
     Projects:     ['id','bid_id','project_name','client','client_id','contract_value','start_date','end_date','status','estimator','superintendent','po_number','contract_signed_date','budget_labour','budget_materials','budget_equipment','budget_subs','estimate_total'],

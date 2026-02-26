@@ -84,3 +84,10 @@ export async function createClient(data: object) {
 export async function addBidDocument(bidId: string, data: object) {
   return call(`bids/${bidId}/documents`, 'POST', data)
 }
+
+export async function addBidTimeline(bidId: string, data: object) {
+  return call(`bids/${bidId}/timeline`, 'POST', data)
+}
+
+// Generic call (for API routes that need direct path access)
+export { call as sheetsCall }

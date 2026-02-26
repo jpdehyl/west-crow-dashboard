@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
 import { LogoFull, LogoIcon } from "./Logo"
 
 const nav = [
@@ -12,6 +13,7 @@ const nav = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -125,37 +127,49 @@ export default function Sidebar() {
         borderTop: "1px solid rgba(255,255,255,0.1)",
         padding: collapsed ? "0.75rem 0.4rem 1.25rem" : "0.75rem 0.75rem 1.25rem",
       }}>
-        <Link href="/settings" title={collapsed ? "Settings" : undefined}
-          className="nav-link"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.6rem",
-            padding: collapsed ? "0.5rem 0" : "0.5rem 0.75rem",
-            borderRadius: "7px",
-            textDecoration: "none",
-            justifyContent: collapsed ? "center" : "flex-start",
-            color: isSettings ? "#ffffff" : "rgba(255,255,255,0.55)",
-            background: isSettings ? "rgba(255,255,255,0.1)" : "transparent",
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-          }}>
-          <span style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: "rgba(255,255,255,0.15)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "13px", flexShrink: 0,
-            color: "rgba(255,255,255,0.7)",
-            fontWeight: 600,
-          }}>
-            JW
-          </span>
-          {!collapsed && (
-            <span className="sidebar-fade" style={{ fontSize: "13px", fontWeight: 400 }}>
-              Jordan West
-            </span>
-          )}
-        </Link>
+        {(() => {
+          const name = session?.user?.name || "User"
+          const email = session?.user?.email || ""
+          const image = session?.user?.image
+          const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+          return (
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              title={collapsed ? `${name} — Sign out` : "Sign out"}
+              style={{
+                display: "flex", alignItems: "center", gap: "0.6rem",
+                padding: collapsed ? "0.5rem 0" : "0.5rem 0.75rem",
+                borderRadius: "7px", width: "100%",
+                background: "transparent", border: "none",
+                cursor: "pointer", fontFamily: "inherit",
+                justifyContent: collapsed ? "center" : "flex-start",
+                overflow: "hidden", whiteSpace: "nowrap",
+                textAlign: "left",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              {image ? (
+                <img src={image} alt={name} style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, objectFit: "cover" }} />
+              ) : (
+                <span style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "12px", flexShrink: 0,
+                  color: "rgba(255,255,255,0.85)", fontWeight: 600,
+                }}>
+                  {initials}
+                </span>
+              )}
+              {!collapsed && (
+                <span className="sidebar-fade" style={{ fontSize: "13px", fontWeight: 400, color: "rgba(255,255,255,0.55)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {name}
+                </span>
+              )}
+            </button>
+          )
+        })()}
       </div>
     </aside>
   )

@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google"
 import "./globals.css"
 import Sidebar from "@/components/Sidebar"
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav"
+import AuthProvider from "@/components/AuthProvider"
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans", weight: ["300","400","500","600"] })
 
@@ -16,21 +17,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={dmSans.variable}
         style={{ fontFamily: "var(--font-sans), sans-serif" }}>
-        <div style={{ display: "flex", minHeight: "100vh" }}>
-          {/* Desktop sidebar — hidden on mobile via .sidebar CSS class */}
-          <div className="sidebar">
-            <Sidebar />
-          </div>
+        <AuthProvider>
+          <div style={{ display: "flex", minHeight: "100vh" }}>
+            {/* Desktop sidebar — hidden on mobile via .sidebar CSS class */}
+            <div className="sidebar">
+              <Sidebar />
+            </div>
 
-          {/* Mobile header + content + bottom nav */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-            <MobileHeader />
-            <main className="main-content" style={{ flex: 1, overflowY: "auto", background: "var(--bg)" }}>
-              {children}
-            </main>
-            <MobileBottomNav />
+            {/* Mobile header + content + bottom nav */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <MobileHeader />
+              <main className="main-content" style={{ flex: 1, overflowY: "auto", background: "var(--bg)" }}>
+                {children}
+              </main>
+              <MobileBottomNav />
+            </div>
           </div>
-        </div>
+        </AuthProvider>
       </body>
     </html>
   )

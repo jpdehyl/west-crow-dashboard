@@ -61,7 +61,7 @@ export default function ClientsPage() {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "1.5rem" }}>
                   {totalWon > 0 && (
-                    <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                    <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
                       {formatCurrency(totalWon)}
                     </p>
                   )}

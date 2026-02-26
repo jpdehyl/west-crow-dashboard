@@ -1,10 +1,9 @@
 import type { Metadata } from "next"
-import { DM_Sans, DM_Serif_Display } from "next/font/google"
+import { DM_Sans } from "next/font/google"
 import "./globals.css"
 import Sidebar from "@/components/Sidebar"
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans", weight: ["300","400","500","600"] })
-const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-serif", weight: "400" })
 
 export const metadata: Metadata = {
   title: "West Crow",
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${dmSerif.variable}`}
+      <body className={dmSans.variable}
         style={{ fontFamily: "var(--font-sans), sans-serif" }}>
         <div style={{ display: "flex", minHeight: "100vh" }}>
           <Sidebar />

@@ -107,7 +107,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                       <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", marginBottom: "0.2rem" }}>{p.project_name}</p>
                       <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{formatDate(p.start_date)} → {formatDate(p.end_date)}</p>
                     </div>
-                    <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.1rem", color: "var(--ink)" }}>{formatCurrency(p.contract_value)}</span>
+                    <span style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)" }}>{formatCurrency(p.contract_value)}</span>
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
@@ -150,7 +150,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                 <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>Due {formatDate(bid.deadline)}</p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-                <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "1rem", color: "var(--ink)" }}>
+                <span style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)" }}>
                   {formatCurrency(bid.bid_value)}
                 </span>
                 <StatusDot status={bid.status} />

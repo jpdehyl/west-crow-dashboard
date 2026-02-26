@@ -86,7 +86,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
         ].map(({ label, value, sub }) => (
           <div key={label} style={{ background: "var(--bg)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
-            <p style={{ fontSize: "1.25rem", fontFamily: "var(--font-serif), serif", color: "var(--ink)", letterSpacing: "-0.02em" }}>{value}</p>
+            <p style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{value}</p>
             {sub && <p style={{ fontSize: "11px", color: urgent && label === "Deadline" ? "var(--terra)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{sub}</p>}
           </div>
         ))}

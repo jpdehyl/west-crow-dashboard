@@ -2,6 +2,8 @@ import { getBid, getClients } from "@/lib/sheets"
 import { formatCurrency, formatDate, formatDateShort, daysUntil, STATUS_COLOR, statusLabel } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
 import BidActions from "@/components/BidActions"
+import CloneBidButton from "@/components/CloneBidButton"
+import AddDocumentForm from "@/components/AddDocumentForm"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -39,11 +41,14 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
             {client && <span style={{ fontSize: "13px", color: "var(--ink-faint)" }}>{client.contact_name} · {client.phone}</span>}
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5rem" }}>
           <p style={{ fontSize: "1.35rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             {formatCurrency(bid.bid_value)}
           </p>
-          <StatusDot status={bid.status} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <StatusDot status={bid.status} />
+            <CloneBidButton bidId={bid.id} />
+          </div>
         </div>
       </div>
 
@@ -108,9 +113,9 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       )}
 
       {/* Documents */}
-      {bid.documents && bid.documents.length > 0 && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
+        {bid.documents && bid.documents.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
             {(bid.documents as any[]).map((doc: any, i: number) => (
               <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
@@ -121,8 +126,9 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
               </a>
             ))}
           </div>
-        </div>
-      )}
+        )}
+        <AddDocumentForm bidId={bid.id} />
+      </div>
 
       {/* Activity */}
       <div>

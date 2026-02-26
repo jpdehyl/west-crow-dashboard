@@ -80,3 +80,7 @@ export async function getClients() {
 export async function createClient(data: object) {
   return call('clients', 'POST', data)
 }
+
+export async function addBidDocument(bidId: string, data: object) {
+  return call(`bids/${bidId}/documents`, 'POST', data)
+}

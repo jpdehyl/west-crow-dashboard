@@ -46,6 +46,10 @@ function route(e, method) {
     if (invM  && method === 'POST')  return out(createInvoice(invM[1], body))
     if (invM  && method === 'PATCH') return out(updateInvoice(invM[1], body))
 
+    // BID DOCUMENTS
+    const docM = path.match(/^bids\/([^/]+)\/documents$/)
+    if (docM && method === 'POST') return out(addDocument(docM[1], body))
+
     // CLIENTS
     if (path === 'clients' && method === 'GET')  return out(getClients())
     if (path === 'clients' && method === 'POST') return out(createClient(body))
@@ -258,6 +262,18 @@ function updateInvoice(projectId, data) {
 // ── CLIENTS ───────────────────────────────────────────────────────────────
 
 function getClients() { return toObjects('Clients') }
+
+function addDocument(bidId, data) {
+  const doc = {
+    id:     uid('doc'),
+    bid_id: bidId,
+    name:   data.name,
+    url:    data.url,
+    type:   data.type || 'bid_docs',
+  }
+  appendRow('BidDocuments', doc)
+  return doc
+}
 
 function createClient(data) {
   const client = {

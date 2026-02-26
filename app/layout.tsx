@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main style={{
             flex: 1,
             minWidth: 0,
-            padding: "2.5rem 3rem",
+            padding: "1.5rem 2rem",
             overflowY: "auto",
             background: "var(--bg)",
           }}>

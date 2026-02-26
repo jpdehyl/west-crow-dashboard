@@ -13,11 +13,57 @@ const STATUS: Record<string, { dot: string; label: string }> = {
 function Dot({ status }: { status: string }) {
   const s = STATUS[status] || STATUS["no-bid"]
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
       <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>{s.label}</span>
     </span>
   )
+}
+
+function MiniBar({ values, colors }: { values: number[]; colors: string[] }) {
+  const total = values.reduce((a, b) => a + b, 0)
+  if (total === 0) return null
+  return (
+    <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "var(--border)", width: "100%" }}>
+      {values.map((v, i) => (
+        <div key={i} style={{ width: `${(v / total) * 100}%`, background: colors[i], minWidth: v > 0 ? 3 : 0 }} />
+      ))}
+    </div>
+  )
+}
+
+function WinRateArc({ pct }: { pct: number }) {
+  const r = 18
+  const circ = 2 * Math.PI * r
+  const filled = (pct / 100) * circ
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" style={{ display: "block" }} role="img" aria-label={`Win rate ${pct}%`}>
+      <circle cx="22" cy="22" r={r} fill="none" stroke="var(--border)" strokeWidth="4" />
+      <circle cx="22" cy="22" r={r} fill="none" stroke="var(--sage)" strokeWidth="4"
+        strokeDasharray={`${filled} ${circ - filled}`}
+        strokeDashoffset={circ * 0.25}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dasharray 0.3s ease" }} />
+    </svg>
+  )
+}
+
+function formatCompact(n: number): string {
+  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
+  if (n >= 1000) return `$${Math.round(n / 1000)}K`
+  return `$${n}`
+}
+
+function relativeDate(d: string): string {
+  const now = new Date()
+  const then = new Date(d)
+  const diffMs = now.getTime() - then.getTime()
+  const days = Math.floor(diffMs / 86400000)
+  if (days === 0) return "Today"
+  if (days === 1) return "Yesterday"
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  return `${Math.floor(days / 30)}mo ago`
 }
 
 export default function DashboardPage() {
@@ -27,226 +73,244 @@ export default function DashboardPage() {
   const decided = BIDS.filter(b => ["won","lost"].includes(b.status))
   const winRate = decided.length > 0 ? Math.round(won.length / decided.length * 100) : 0
   const pipeline = [...active, ...sent].reduce((s, b) => s + b.bid_value, 0)
+  const activeVal = active.reduce((s, b) => s + b.bid_value, 0)
+  const sentVal = sent.reduce((s, b) => s + b.bid_value, 0)
 
   const urgent = BIDS.filter(b => {
     const days = daysUntil(b.deadline)
     return days <= 14 && days >= 0 && !["won","lost","no-bid"].includes(b.status)
   }).sort((a,b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
 
-  const recent = [...BIDS]
-    .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5)
-
   const dateStr = new Date().toLocaleDateString("en-CA", {
     weekday: "long", month: "long", day: "numeric"
   })
 
-  return (
-    <div style={{ maxWidth: "960px", marginLeft: "-3rem", marginRight: "-3rem", marginTop: "-2.5rem" }}>
+  const today = new Date(); today.setHours(0,0,0,0)
+  const onSite = PROJECTS.filter(p => {
+    const start = new Date(p.start_date); start.setHours(0,0,0,0)
+    return p.status === 'active' && start <= today
+  })
 
-      {/* ── HERO ── */}
-      <div style={{
-        background: "var(--accent)",
-        padding: "3rem 3rem 2.5rem",
-      }}>
-        <p style={{
-          fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "rgba(255,255,255,0.5)", fontWeight: 500, marginBottom: "1rem",
-        }}>{dateStr}</p>
-        <h1 style={{
-          fontSize: "3rem", fontWeight: 600,
-          letterSpacing: "-0.03em", lineHeight: 1.05,
-          color: "#ffffff",
-          marginBottom: "0.5rem",
-        }}>{formatCurrency(pipeline)}</h1>
-        <p style={{
-          fontSize: "15px", color: "rgba(255,255,255,0.6)", fontWeight: 400,
-        }}>in active pipeline · {active.length + sent.length} open bids</p>
+  const activities: { icon: string; text: string; date: string; href: string }[] = []
+  BIDS.forEach(bid => {
+    bid.timeline.forEach(ev => {
+      let text = ""
+      if (ev.stage === "invited") text = `${bid.project_name} — bid invite received`
+      else if (ev.stage === "estimating") text = `${bid.project_name} — estimation started`
+      else if (ev.stage === "submitted") text = `${bid.project_name} — bid submitted`
+      else if (ev.stage === "decision" && bid.status === "won") text = `${bid.project_name} — won`
+      else if (ev.stage === "decision" && bid.status === "lost") text = `${bid.project_name} — lost`
+      else if (ev.stage === "decision") text = `${bid.project_name} — decision made`
+      if (text) {
+        const icons: Record<string, string> = { invited: "📩", estimating: "📐", submitted: "📤", decision: "✅" }
+        activities.push({ icon: icons[ev.stage] || "•", text, date: ev.date, href: `/bids/${bid.id}` })
+      }
+    })
+  })
+  PROJECTS.forEach(proj => {
+    if (proj.invoices) {
+      proj.invoices.forEach(inv => {
+        if (inv.sent_date) {
+          activities.push({ icon: "💰", text: `${proj.project_name} — Invoice ${inv.number} sent`, date: inv.sent_date, href: `/projects/${proj.id}` })
+        }
+      })
+    }
+  })
+  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const recentActivity = activities.slice(0, 5)
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+        <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400 }}>{dateStr}</p>
+        <Link href="/bids/new" style={{
+          fontSize: "13px", fontWeight: 600, color: "#fff", background: "var(--accent)",
+          padding: "0.4rem 1rem", borderRadius: "6px", textDecoration: "none",
+        }}>+ New Bid</Link>
       </div>
 
-      {/* ── CONTENT ── */}
-      <div style={{ padding: "2rem 3rem 2.5rem" }}>
-
-        {/* KPIs — asymmetric layout */}
+      <div className="kpi-grid" style={{ display: "grid", gap: "0.75rem", marginBottom: "1.5rem" }}>
         <div style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "1.5rem",
-          marginBottom: "2.5rem",
+          border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
+          display: "flex", flexDirection: "column", gap: "0.5rem",
         }}>
-          <div style={{ padding: "1.25rem 0" }}>
-            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Active</p>
-            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{active.length}</p>
-            <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>in estimation</p>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500 }}>Pipeline</p>
+          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>
+            {formatCurrency(pipeline)}
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.15rem" }}>
+            <MiniBar values={[activeVal, sentVal]} colors={["#3b6fa0", "#b8860b"]} />
           </div>
-          <div style={{ padding: "1.25rem 0" }}>
-            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Awaiting</p>
-            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{sent.length}</p>
-            <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>pending decision</p>
+          <div style={{ display: "flex", gap: "0.75rem", fontSize: "11px", color: "var(--ink-faint)" }}>
+            <span><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#3b6fa0", marginRight: 4 }} />Active {formatCompact(activeVal)}</span>
+            <span><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#b8860b", marginRight: 4 }} />Sent {formatCompact(sentVal)}</span>
           </div>
-          <div style={{ padding: "1.25rem 0" }}>
-            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Win Rate</p>
+        </div>
+
+        <div style={{
+          border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
+        }}>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Active Bids</p>
+          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{active.length}</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>in estimation</p>
+        </div>
+
+        <div style={{
+          border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
+        }}>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Awaiting</p>
+          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{sent.length}</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>pending decision</p>
+        </div>
+
+        <div style={{
+          border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
+          display: "flex", alignItems: "center", gap: "1rem",
+        }}>
+          <WinRateArc pct={winRate} />
+          <div>
+            <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Win Rate</p>
             <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{winRate}%</p>
             <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>{won.length}/{decided.length} decided</p>
           </div>
         </div>
+      </div>
 
-        {/* ── ON SITE ── */}
-        {(() => {
-          const today = new Date(); today.setHours(0,0,0,0)
-          const onSite = PROJECTS.filter(p => {
-            const start = new Date(p.start_date); start.setHours(0,0,0,0)
-            return p.status === 'active' && start <= today
-          })
-          if (onSite.length === 0) return null
-          return (
-            <div style={{ marginBottom: "2.5rem" }}>
-              <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "0.75rem" }}>
-                On Site
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {onSite.map((project, i) => {
-                  const spent    = project.costs.reduce((s,c) => s + c.amount, 0)
-                  const budget   = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
-                  const pct      = Math.round(spent / budget * 100)
-                  const startD   = new Date(project.start_date); startD.setHours(0,0,0,0)
-                  const endD     = new Date(project.end_date);   endD.setHours(0,0,0,0)
-                  const totalD   = Math.ceil((endD.getTime() - startD.getTime()) / 86400000)
-                  const elapsed  = Math.ceil((today.getTime() - startD.getTime()) / 86400000)
-                  const daysLeft = Math.max(0, Math.ceil((endD.getTime() - today.getTime()) / 86400000))
-                  const timePct  = Math.round(Math.min(elapsed / totalD, 1) * 100)
-                  const isLast   = i === onSite.length - 1
-
-                  return (
-                    <Link key={project.id} href={`/projects/${project.id}`}
-                      className="row-hover"
-                      style={{
-                        display: "block",
-                        padding: "0.85rem 0",
-                        textDecoration: "none",
-                        borderBottom: isLast ? "none" : "1px solid var(--border)",
-                      }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                        <div>
-                          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{project.project_name}</span>
-                          <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.6rem" }}>{project.client}</span>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexShrink: 0 }}>
-                          <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Day {elapsed} · {daysLeft}d left</span>
-                          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
-                            {formatCurrency(project.contract_value)}
-                          </span>
-                          <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 7px", borderRadius: "4px" }}>
-                            ● Active
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.15rem" }}>
-                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Budget</span>
-                            <span style={{ fontSize: "10px", color: pct > 85 ? "var(--terra)" : "var(--ink-faint)", fontWeight: pct > 85 ? 600 : 400 }}>{pct}%</span>
-                          </div>
-                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${Math.min(pct,100)}%`, background: pct > 85 ? "var(--terra)" : "var(--sage)", borderRadius: 2 }} />
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.15rem" }}>
-                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Timeline</span>
-                            <span style={{ fontSize: "10px", color: "var(--ink-faint)" }}>{timePct}%</span>
-                          </div>
-                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${timePct}%`, background: "var(--gold)", borderRadius: 2 }} />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* ── URGENT BIDS ── */}
-        {urgent.length > 0 && (
-          <div style={{
-            marginBottom: "2.5rem",
-            background: "var(--gold-light)",
-            borderRadius: "8px",
-            padding: "1.25rem 1.5rem",
-          }}>
-            <h2 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--gold)", marginBottom: "0.6rem" }}>
-              Due in 14 days
+      <div className="content-grid" style={{ display: "grid", gap: "0.75rem", marginBottom: "1.5rem", alignItems: "start" }}>
+        {onSite.length > 0 && (
+          <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+            <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+              On Site
             </h2>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {urgent.map((bid, i) => {
-                const days = daysUntil(bid.deadline)
-                const isLast = i === urgent.length - 1
-                return (
-                  <Link key={bid.id} href={`/bids/${bid.id}`}
-                    className="row-hover"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "0.65rem 0", textDecoration: "none",
-                      borderBottom: isLast ? "none" : "1px solid rgba(184,134,11,0.15)",
-                    }}>
-                    <div>
-                      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{bid.project_name}</span>
-                      <span style={{ fontSize: "13px", color: "var(--ink-muted)", marginLeft: "0.6rem" }}>{bid.client}</span>
+            {onSite.map((project, i) => {
+              const spent   = project.costs.reduce((s,c) => s + c.amount, 0)
+              const budget  = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
+              const pct     = budget > 0 ? Math.round(spent / budget * 100) : 0
+              const startD  = new Date(project.start_date); startD.setHours(0,0,0,0)
+              const endD    = new Date(project.end_date);   endD.setHours(0,0,0,0)
+              const totalD  = Math.max(1, Math.ceil((endD.getTime() - startD.getTime()) / 86400000))
+              const elapsed = Math.ceil((today.getTime() - startD.getTime()) / 86400000)
+              const daysLeft = Math.max(0, Math.ceil((endD.getTime() - today.getTime()) / 86400000))
+              const timePct = Math.round(Math.min(elapsed / totalD, 1) * 100)
+              const isLast  = i === onSite.length - 1
+
+              return (
+                <Link key={project.id} href={`/projects/${project.id}`}
+                  className="row-hover"
+                  style={{
+                    display: "block", padding: "0.75rem 0", textDecoration: "none",
+                    borderBottom: isLast ? "none" : "1px solid var(--border)",
+                  }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{project.project_name}</span>
+                      <span style={{ fontSize: "12px", color: "var(--ink-faint)", marginLeft: "0.5rem" }}>{project.client}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-                      <span style={{
-                        fontSize: "12px", fontWeight: 600,
-                        color: days <= 5 ? "var(--terra)" : "var(--gold)",
-                        background: days <= 5 ? "var(--terra-light)" : "rgba(255,255,255,0.7)",
-                        padding: "3px 8px", borderRadius: "5px"
-                      }}>{days}d</span>
-                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
-                        {formatCurrency(bid.bid_value)}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 }}>
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>
+                        {formatCurrency(project.contract_value)}
                       </span>
-                      <Dot status={bid.status} />
+                      <span style={{ fontSize: "11px", fontWeight: 500, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 6px", borderRadius: "4px" }}>
+                        Day {elapsed}
+                      </span>
                     </div>
-                  </Link>
-                )
-              })}
-            </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                        <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Budget</span>
+                        <span style={{ fontSize: "11px", color: pct > 85 ? "var(--terra)" : "var(--ink-muted)", fontWeight: 500 }}>
+                          {formatCompact(spent)} / {formatCompact(budget)}
+                        </span>
+                      </div>
+                      <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${Math.min(pct,100)}%`, background: pct > 85 ? "var(--terra)" : "var(--sage)", borderRadius: 3 }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                        <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Timeline</span>
+                        <span style={{ fontSize: "11px", color: "var(--ink-muted)", fontWeight: 500 }}>{daysLeft}d left</span>
+                      </div>
+                      <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${timePct}%`, background: "var(--gold)", borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
 
-        {/* ── RECENT BIDS ── */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.6rem" }}>
-            <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-              Recent Bids
+        {urgent.length > 0 && (
+          <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+            <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+              Due Soon
             </h2>
-            <Link href="/bids" style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>All bids →</Link>
-          </div>
-          <div>
-            {recent.map((bid, i) => (
-              <Link key={bid.id} href={`/bids/${bid.id}`}
-                className="row-hover"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "0.55rem 0", textDecoration: "none",
-                  borderBottom: i < recent.length - 1 ? "1px solid var(--border)" : "none",
-                }}>
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>{bid.project_name}</span>
-                  <span style={{ fontSize: "12px", color: "var(--ink-faint)", marginLeft: "0.6rem" }}>{bid.client}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-                  <span style={{ fontSize: "12px", color: "var(--ink-faint)", whiteSpace: "nowrap" }}>{formatDate(bid.deadline)}</span>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap" }}>
-                    {formatCurrency(bid.bid_value)}
-                  </span>
-                  <Dot status={bid.status} />
-                </div>
+            {urgent.map((bid, i) => {
+              const days = daysUntil(bid.deadline)
+              const isLast = i === urgent.length - 1
+              return (
+                <Link key={bid.id} href={`/bids/${bid.id}`}
+                  className="row-hover"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "0.55rem 0", textDecoration: "none",
+                    borderBottom: isLast ? "none" : "1px solid var(--border)",
+                  }}>
+                  <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>{bid.project_name}</span>
+                    <span style={{ fontSize: "12px", color: "var(--ink-faint)", marginLeft: "0.4rem" }}>{bid.client}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: "11px", fontWeight: 600, minWidth: "2rem", textAlign: "center",
+                      color: days <= 5 ? "var(--terra)" : "var(--gold)",
+                      background: days <= 5 ? "var(--terra-light)" : "var(--gold-light)",
+                      padding: "2px 6px", borderRadius: "4px",
+                    }}>{days}d</span>
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap" }}>
+                      {formatCurrency(bid.bid_value)}
+                    </span>
+                    <Dot status={bid.status} />
+                  </div>
+                </Link>
+              )
+            })}
+            <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)" }}>
+              <Link href="/bids" style={{ fontSize: "12px", color: "var(--ink-muted)", textDecoration: "none", fontWeight: 500 }}>
+                View pipeline →
               </Link>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {recentActivity.length > 0 && (
+        <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+          <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+            Recent Activity
+          </h2>
+          {recentActivity.map((item, i) => (
+            <Link key={`${item.href}-${item.date}-${i}`} href={item.href}
+              className="row-hover"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "0.45rem 0", textDecoration: "none",
+                borderBottom: i < recentActivity.length - 1 ? "1px solid var(--border)" : "none",
+              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+                <span style={{ fontSize: "14px", flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ fontSize: "13px", color: "var(--ink)", fontWeight: 400 }}>{item.text}</span>
+              </div>
+              <span style={{ fontSize: "12px", color: "var(--ink-faint)", whiteSpace: "nowrap", marginLeft: "0.75rem" }}>
+                {relativeDate(item.date)}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

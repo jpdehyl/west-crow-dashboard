@@ -43,3 +43,29 @@ body {
 .sidebar-fade {
   transition: opacity 0.15s ease;
 }
+
+.kpi-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.content-grid {
+  grid-template-columns: 1.4fr 1fr;
+}
+
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}

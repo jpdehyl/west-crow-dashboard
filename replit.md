@@ -38,6 +38,15 @@ scripts/
   sheets-api.gs   # Google Apps Script for backend
 ```
 
+## Dashboard Layout
+
+Apple-inspired information-dense dashboard:
+- **KPI cards**: 4-card responsive grid (Pipeline with mini bar, Active Bids, Awaiting, Win Rate with arc chart)
+- **Content grid**: Two-column layout — On Site projects (left 60%) + Due Soon bids (right 40%)
+- **Activity feed**: Recent timeline events replacing redundant "Recent Bids" section
+- **Responsive**: 4→2→1 columns for KPIs, 2→1 for content grid (breakpoints at 1024px, 640px)
+- No hero banner — compact date header with inline + New Bid button
+
 ## Branding
 
 Color palette aligned with westcrow.ca:

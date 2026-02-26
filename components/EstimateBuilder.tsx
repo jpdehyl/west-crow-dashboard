@@ -1,14 +1,20 @@
 "use client"
-import { useState, useCallback } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { DEFAULT_SECTIONS, DEFAULT_CONFIG, type Section, type EstimateConfig } from "@/lib/estimate-data"
+import {
+  DEFAULT_SECTIONS, DEFAULT_SUBTRADES, DEFAULT_CONFIG,
+  type Section, type SubtradeItem, type EstimateConfig, type LineItem,
+} from "@/lib/estimate-data"
 
 // ── Calculation ─────────────────────────────────────────────────────────────
+// ⚠️ Clark's rule: has_material=false for Mob (010001) and Demob (010315)
+// Formula: ManDays × $296 + Material(18% if applicable) → × 1.42 (12% OH + 30% profit, additive)
 
-function calcItem(units: number, upd: number, cfg: EstimateConfig) {
-  const manDays     = upd > 0 ? units / upd : 0
+function calcItem(item: LineItem, cfg: EstimateConfig) {
+  const { units, units_per_day, has_material } = item
+  const manDays     = units_per_day > 0 ? units / units_per_day : 0
   const labour      = manDays * cfg.cost_per_man_day
-  const materialCost= labour * (cfg.material_pct / 100)
+  const materialCost= has_material ? labour * (cfg.material_pct / 100) : 0
   const totalCost   = labour + materialCost
   const overhead    = totalCost * (cfg.overhead_pct / 100)
   const profit      = totalCost * (cfg.profit_pct  / 100)
@@ -17,10 +23,23 @@ function calcItem(units: number, upd: number, cfg: EstimateConfig) {
   return { manDays, labour, materialCost, totalCost, overhead, profit, total, rpu }
 }
 
-function grandTotal(sections: Section[], cfg: EstimateConfig) {
+// Subtrade item: flat unit_cost × units → raw total → × (1 + markup%)
+function calcSubtrade(item: SubtradeItem, markupPct: number) {
+  const raw   = item.units * item.unit_cost
+  const total = raw * (1 + markupPct / 100)
+  return { raw, total }
+}
+
+function deHylForces(sections: Section[], cfg: EstimateConfig) {
   return sections.flatMap(s => s.items)
     .filter(i => i.active && i.units > 0)
-    .reduce((sum, i) => sum + calcItem(i.units, i.units_per_day, cfg).total, 0)
+    .reduce((sum, i) => sum + calcItem(i, cfg).total, 0)
+}
+
+function subtradesTotal(subs: SubtradeItem[], markupPct: number) {
+  return subs
+    .filter(s => s.active && s.units > 0)
+    .reduce((sum, s) => sum + calcSubtrade(s, markupPct).total, 0)
 }
 
 // ── Formatting ───────────────────────────────────────────────────────────────
@@ -47,7 +66,6 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
   const [cfg, setCfg] = useState<EstimateConfig>(saved?.config ?? DEFAULT_CONFIG)
   const [sections, setSections] = useState<Section[]>(() => {
     if (!saved?.sections) return DEFAULT_SECTIONS
-    // Merge saved data onto defaults (preserves new sections added in updates)
     return DEFAULT_SECTIONS.map(def => {
       const s = saved.sections.find((x: any) => x.id === def.id)
       if (!s) return def
@@ -56,13 +74,29 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
         expanded: s.expanded ?? def.expanded,
         items: def.items.map(di => {
           const si = s.items?.find((x: any) => x.id === di.id)
-          return si ? { ...di, units: Number(si.units) || 0, units_per_day: Number(si.units_per_day) || di.units_per_day, active: si.active !== false, notes: si.notes || "" } : di
+          return si ? {
+            ...di,
+            units: Number(si.units) || 0,
+            units_per_day: Number(si.units_per_day) || di.units_per_day,
+            has_material: si.has_material !== undefined ? si.has_material : di.has_material,
+            active: si.active !== false,
+            notes: si.notes || "",
+          } : di
         }),
       }
     })
   })
+  const [subtrades, setSubtrades] = useState<SubtradeItem[]>(() => {
+    if (!saved?.subtrades) return DEFAULT_SUBTRADES
+    return DEFAULT_SUBTRADES.map(def => {
+      const s = saved.subtrades?.find((x: any) => x.id === def.id)
+      return s ? { ...def, units: Number(s.units) || 0, unit_cost: Number(s.unit_cost) || def.unit_cost, active: s.active !== false, notes: s.notes || "" } : def
+    })
+  })
 
-  const gt = grandTotal(sections, cfg)
+  const dfTotal = deHylForces(sections, cfg)
+  const stTotal = subtradesTotal(subtrades, cfg.subtrade_markup)
+  const gt      = dfTotal + stTotal
 
   function updateItem(secId: string, itemId: string, field: string, value: any) {
     setSections(prev => prev.map(s =>
@@ -73,13 +107,17 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
     ))
   }
 
+  function updateSub(subId: string, field: string, value: any) {
+    setSubtrades(prev => prev.map(s => s.id !== subId ? s : { ...s, [field]: value }))
+  }
+
   function toggleSection(secId: string) {
     setSections(prev => prev.map(s => s.id === secId ? { ...s, expanded: !s.expanded } : s))
   }
 
   function sectionTotal(sec: Section) {
     return sec.items.filter(i => i.active && i.units > 0)
-      .reduce((sum, i) => sum + calcItem(i.units, i.units_per_day, cfg).total, 0)
+      .reduce((sum, i) => sum + calcItem(i, cfg).total, 0)
   }
 
   async function handleSave() {
@@ -88,7 +126,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       await fetch(`/api/bids/${bidId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg, sections, grand_total: gt }),
+        body: JSON.stringify({ config: cfg, sections, subtrades, grand_total: gt }),
       })
       router.refresh()
     } finally {
@@ -153,7 +191,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
           </label>
         ))}
         <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--ink-faint)" }}>
-          Applied to all line items
+          Material % not applied to Mob/Demob
         </span>
       </div>
 
@@ -205,7 +243,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
                   </thead>
                   <tbody>
                     {sec.items.map(item => {
-                      const c = calcItem(item.units, item.units_per_day, cfg)
+                      const c = calcItem(item, cfg)
                       const hasValue = item.units > 0 && item.active
                       return (
                         <tr key={item.id} style={{ background: item.active ? "var(--bg)" : "var(--bg-subtle)", opacity: item.active ? 1 : 0.5 }}>
@@ -220,7 +258,12 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
                           {/* Description */}
                           <td style={{ ...cell, color: "var(--ink)", fontWeight: 400 }}>
                             <div style={{ display: "flex", flexDirection: "column" }}>
-                              <span>{item.description}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                <span>{item.description}</span>
+                                {!item.has_material && (
+                                  <span style={{ fontSize: "9px", padding: "1px 5px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--ink-faint)", letterSpacing: "0.05em" }}>no mat.</span>
+                                )}
+                              </div>
                               <span style={{ fontSize: "10px", color: "var(--ink-faint)", fontVariantNumeric: "tabular-nums" }}>{item.phase_code}</span>
                             </div>
                           </td>
@@ -281,19 +324,129 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
         )
       })}
 
+      {/* ── Subtrades Section ── */}
+      <div style={{ marginBottom: "0.75rem", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{
+          display: "flex", alignItems: "center", width: "100%", padding: "0.75rem 1.25rem",
+          background: "var(--bg-subtle)", borderBottom: "1px solid var(--border)",
+        }}>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)", flex: 1 }}>
+            Subtrades &amp; Costs
+          </span>
+          <span style={{ fontSize: "11px", color: "var(--ink-faint)", marginRight: "1rem" }}>
+            +{cfg.subtrade_markup}% markup
+          </span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: stTotal > 0 ? "var(--ink)" : "var(--ink-faint)", minWidth: "90px", textAlign: "right" }}>
+            {stTotal > 0 ? $(stTotal) : "—"}
+          </span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+            <thead>
+              <tr style={{ background: "var(--bg-subtle)" }}>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", width: 24 }}></th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "left" }}>Description</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "right" }}>Qty</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "right" }}>Unit</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "right" }}>Unit Cost</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "right" }}>Raw</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--sage)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "right" }}>w/ {cfg.subtrade_markup}% mkp</th>
+                <th style={{ ...cell, fontWeight: 500, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", textAlign: "left" }}>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subtrades.map(s => {
+                const cs = calcSubtrade(s, cfg.subtrade_markup)
+                const hasValue = s.units > 0 && s.active
+                return (
+                  <tr key={s.id} style={{ background: s.active ? "var(--bg)" : "var(--bg-subtle)", opacity: s.active ? 1 : 0.5 }}>
+                    <td style={{ ...cell, textAlign: "center" }}>
+                      <input type="checkbox" checked={s.active}
+                        onChange={e => updateSub(s.id, "active", e.target.checked)}
+                        style={{ cursor: "pointer" }} />
+                    </td>
+                    <td style={{ ...cell, color: "var(--ink)" }}>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span>{s.description}</span>
+                        <span style={{ fontSize: "10px", color: "var(--ink-faint)" }}>{s.phase_code}</span>
+                      </div>
+                    </td>
+                    <td style={{ ...cell, textAlign: "right" }}>
+                      <input type="number" min={0} step={1}
+                        value={s.units || ""}
+                        placeholder="0"
+                        onChange={e => updateSub(s.id, "units", Number(e.target.value))}
+                        style={inputStyle} />
+                    </td>
+                    <td style={{ ...calcCell }}>{s.unit_type}</td>
+                    <td style={{ ...cell, textAlign: "right" }}>
+                      <input type="number" min={0} step={0.01}
+                        value={s.unit_cost || ""}
+                        onChange={e => updateSub(s.id, "unit_cost", Number(e.target.value))}
+                        style={{ ...inputStyle, width: "72px" }} />
+                    </td>
+                    <td style={{ ...calcCell }}>{hasValue ? $(cs.raw) : "—"}</td>
+                    <td style={{ ...numCell, fontWeight: 600, color: hasValue ? "var(--sage)" : "var(--ink-faint)" }}>
+                      {hasValue ? $(cs.total) : "—"}
+                    </td>
+                    <td style={{ ...cell }}>
+                      <input type="text"
+                        value={s.notes}
+                        placeholder="notes…"
+                        onChange={e => updateSub(s.id, "notes", e.target.value)}
+                        style={{ ...inputStyle, width: "140px", textAlign: "left" }} />
+                    </td>
+                  </tr>
+                )
+              })}
+              {stTotal > 0 && (
+                <tr style={{ background: "var(--bg-subtle)", borderTop: "2px solid var(--border)" }}>
+                  <td colSpan={6} style={{ ...cell, textAlign: "right", fontWeight: 500, color: "var(--ink-muted)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Subtrades Total
+                  </td>
+                  <td style={{ ...numCell, fontWeight: 700, color: "var(--ink)", fontSize: "13px" }}>{$(stTotal)}</td>
+                  <td style={calcCell}></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Summary Bar ── */}
+      {(dfTotal > 0 || stTotal > 0) && (
+        <div style={{ margin: "1rem 0", padding: "1rem 1.5rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontSize: "10px", color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>DeHyl Own Forces</p>
+            <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{$(dfTotal)}</p>
+          </div>
+          <div style={{ color: "var(--ink-faint)", fontSize: "1.2rem", alignSelf: "center" }}>+</div>
+          <div>
+            <p style={{ fontSize: "10px", color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Subtrades ({cfg.subtrade_markup}% mkp)</p>
+            <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>{$(stTotal)}</p>
+          </div>
+          <div style={{ color: "var(--ink-faint)", fontSize: "1.2rem", alignSelf: "center" }}>=</div>
+          <div>
+            <p style={{ fontSize: "10px", color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Estimate Total</p>
+            <p style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--terra)", letterSpacing: "-0.03em" }}>{$(gt)}</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Grand Total ── */}
-      <div style={{ marginTop: "1.5rem", padding: "1.5rem", background: gt > 0 ? "var(--ink)" : "var(--bg-subtle)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: gt === 0 ? "1px solid var(--border)" : "none" }}>
+      <div style={{ marginTop: "0.75rem", padding: "1.5rem", background: gt > 0 ? "var(--ink)" : "var(--bg-subtle)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: gt === 0 ? "1px solid var(--border)" : "none" }}>
         <div>
           <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: gt > 0 ? "rgba(255,255,255,0.55)" : "var(--ink-faint)", fontWeight: 500, marginBottom: "0.3rem" }}>
-            Grand Total (Incl. {cfg.overhead_pct}% OH + {cfg.profit_pct}% Profit)
+            Grand Total
           </p>
           <p style={{ fontSize: "2.5rem", fontWeight: 600, letterSpacing: "-0.04em", color: gt > 0 ? "#fff" : "var(--ink-faint)", lineHeight: 1 }}>
             {gt > 0 ? $(gt) : "No items yet"}
           </p>
           {gt > 0 && (
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginTop: "0.35rem" }}>
-              Labour: {$(sections.flatMap(s => s.items).filter(i => i.active && i.units > 0).reduce((s, i) => s + calcItem(i.units, i.units_per_day, cfg).labour, 0))} · 
-              Material: {$(sections.flatMap(s => s.items).filter(i => i.active && i.units > 0).reduce((s, i) => s + calcItem(i.units, i.units_per_day, cfg).materialCost, 0))}
+              Labour: {$(sections.flatMap(s => s.items).filter(i => i.active && i.units > 0).reduce((s, i) => s + calcItem(i, cfg).labour, 0))} ·
+              Material: {$(sections.flatMap(s => s.items).filter(i => i.active && i.units > 0).reduce((s, i) => s + calcItem(i, cfg).materialCost, 0))} ·
+              Subtrades: {$(stTotal)}
             </p>
           )}
         </div>

@@ -120,6 +120,7 @@ export default function DashboardPage() {
   const recentActivity = activities.slice(0, 5)
 
   return (
+<<<<<<< HEAD
     <div>
       <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400, marginBottom: "1.25rem" }}>{dateStr}</p>
 
@@ -175,6 +176,150 @@ export default function DashboardPage() {
           <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
             <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
               On Site
+=======
+    <div className="hero-breakout" style={{ maxWidth: "960px" }}>
+
+      {/* ── HERO ── */}
+      <div style={{
+        position: "relative",
+        height: "clamp(200px, 30vw, 340px)",
+        backgroundImage: `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center 40%",
+        overflow: "hidden",
+      }}>
+        {/* Gradient overlay: dark at top edges, fades to warm white at bottom */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.05) 40%, rgba(255,253,248,0.85) 80%, rgba(255,253,248,1) 100%)",
+        }} />
+
+        {/* Hero text — sits low in the image */}
+        <div className="hero-text-inner">
+          <p style={{
+            fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.7)", fontWeight: 500, marginBottom: "0.6rem",
+            textShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }}>{dateStr}</p>
+          <h1 className="hero-headline">{headline}</h1>
+          <p style={{
+            fontSize: "15px", color: "rgba(255,255,255,0.8)",
+            textShadow: "0 1px 4px rgba(0,0,0,0.2)",
+          }}>{subline}</p>
+        </div>
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div className="hero-content-inner">
+
+        {/* KPIs */}
+        <div className="kpi-grid-4" style={{
+          border: "1px solid var(--border)", borderRadius: "12px",
+          overflow: "hidden", marginBottom: "3rem",
+        }}>
+          {[
+            { label: "Pipeline",   value: formatCurrency(pipeline),    note: `${active.length + sent.length} open` },
+            { label: "Active",     value: String(active.length),       note: "in estimation" },
+            { label: "Awaiting",   value: String(sent.length),         note: "pending decision" },
+            { label: "Win Rate",   value: `${winRate}%`,               note: `${won.length}/${decided.length} decided` },
+          ].map(({ label, value, note }) => (
+            <div key={label} className="kpi-cell" style={{
+              padding: "1.5rem 1.75rem",
+              background: "var(--bg)",
+            }}>
+              <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.6rem" }}>{label}</p>
+              <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1, marginBottom: "0.35rem" }}>{value}</p>
+              <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{note}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── ON SITE ── */}
+        {(() => {
+          const today = new Date(); today.setHours(0,0,0,0)
+          const onSite = PROJECTS.filter(p => {
+            const start = new Date(p.start_date); start.setHours(0,0,0,0)
+            const end   = new Date(p.end_date);   end.setHours(0,0,0,0)
+            return p.status === 'active' && start <= today
+          })
+          if (onSite.length === 0) return null
+          return (
+            <div style={{ marginBottom: "3rem" }}>
+              <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "1rem" }}>
+                On Site
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                {onSite.map((project, i) => {
+                  const spent    = project.costs.reduce((s,c) => s + c.amount, 0)
+                  const budget   = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
+                  const pct      = Math.round(spent / budget * 100)
+                  const startD   = new Date(project.start_date); startD.setHours(0,0,0,0)
+                  const endD     = new Date(project.end_date);   endD.setHours(0,0,0,0)
+                  const totalD   = Math.ceil((endD.getTime() - startD.getTime()) / 86400000)
+                  const elapsed  = Math.ceil((today.getTime() - startD.getTime()) / 86400000)
+                  const daysLeft = Math.max(0, Math.ceil((endD.getTime() - today.getTime()) / 86400000))
+                  const timePct  = Math.round(Math.min(elapsed / totalD, 1) * 100)
+                  const isLast   = i === onSite.length - 1
+
+                  return (
+                    <Link key={project.id} href={`/projects/${project.id}`}
+                      className="row-hover"
+                      style={{
+                        display: "block",
+                        padding: "1rem 0",
+                        textDecoration: "none",
+                        borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+                        <div>
+                          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{project.project_name}</span>
+                          <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.75rem" }}>{project.client}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexShrink: 0 }}>
+                          <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Day {elapsed} · {daysLeft}d left</span>
+                          <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
+                            {formatCurrency(project.contract_value)}
+                          </span>
+                          <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 7px", borderRadius: "4px" }}>
+                            ● Active
+                          </span>
+                        </div>
+                      </div>
+                      {/* Dual progress bars */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Budget</span>
+                            <span style={{ fontSize: "10px", color: pct > 85 ? "var(--terra)" : "var(--ink-faint)", fontWeight: pct > 85 ? 600 : 400 }}>{pct}%</span>
+                          </div>
+                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.min(pct,100)}%`, background: pct > 85 ? "var(--terra)" : "var(--sage)", borderRadius: 2 }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Timeline</span>
+                            <span style={{ fontSize: "10px", color: "var(--ink-faint)" }}>{timePct}%</span>
+                          </div>
+                          <div style={{ height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${timePct}%`, background: "var(--gold)", borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Urgent bids */}
+        {urgent.length > 0 && (
+          <div style={{ marginBottom: "3rem" }}>
+            <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "1rem" }}>
+              Due in 14 days
+>>>>>>> a24d7b81b04fcfeba19bacfaae79238e9ca84a30
             </h2>
             {onSite.map((project, i) => {
               const spent   = project.costs.reduce((s,c) => s + c.amount, 0)

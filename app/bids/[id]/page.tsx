@@ -78,7 +78,11 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* KPIs */}
+<<<<<<< HEAD
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "1.5rem" }}>
+=======
+      <div className="kpi-grid-3" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "2.5rem" }}>
+>>>>>>> a24d7b81b04fcfeba19bacfaae79238e9ca84a30
         {[
           { label: "Deadline",  value: formatDate(bid.deadline), sub: urgent ? `${days} days left` : bid.status === 'won' ? 'Closed' : '' },
           { label: "Estimator", value: bid.estimator, sub: "West Crow" },

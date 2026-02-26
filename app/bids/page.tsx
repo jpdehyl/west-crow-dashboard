@@ -126,7 +126,7 @@ export default function PipelinePage() {
       </div>
 
       {/* Stage summary — clickable filters */}
-      <div style={{ display: "flex", gap: "0", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "1.25rem" }}>
+      <div className="stage-strip" style={{ gap: "0", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", marginBottom: "1.25rem" }}>
         {STAGES.map(({ key, label }, i) => {
           const count    = bids.filter(b => b.status === key).length
           const val      = bids.filter(b => b.status === key).reduce((s, b) => s + b.bid_value, 0)
@@ -187,7 +187,7 @@ export default function PipelinePage() {
       ) : view === 'list' ? (
 
         /* LIST VIEW */
-        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+        <div className="table-scroll" style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
           {filtered.length === 0 ? (
             <div style={{ padding: "3rem", textAlign: "center", color: "var(--ink-faint)", fontSize: "13px" }}>
               No bids match your filters.{" "}
@@ -208,8 +208,13 @@ export default function PipelinePage() {
                       {label}<SortIcon col={key} />
                     </th>
                   ))}
+<<<<<<< HEAD
                   <th style={{ textAlign: "left", padding: "0.55rem 1rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Stage</th>
                   <th style={{ textAlign: "left", padding: "0.55rem 1rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Est.</th>
+=======
+                  <th className="col-hide-mobile" style={{ textAlign: "left", padding: "0.7rem 1.5rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Stage</th>
+                  <th className="col-hide-mobile" style={{ textAlign: "left", padding: "0.7rem 1.5rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Est.</th>
+>>>>>>> a24d7b81b04fcfeba19bacfaae79238e9ca84a30
                   <th onClick={() => handleSort('margin_pct')} style={{
                     textAlign: "right", padding: "0.55rem 1rem",
                     fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
@@ -239,9 +244,15 @@ export default function PipelinePage() {
                         <span style={{ color: urgent ? "var(--terra)" : "var(--ink-muted)" }}>{formatDate(bid.deadline)}</span>
                         {urgent && <span style={{ marginLeft: "0.4rem", fontSize: "11px", background: "var(--terra-light)", color: "var(--terra)", padding: "1px 5px", borderRadius: "4px", fontWeight: 500 }}>{days}d</span>}
                       </td>
+<<<<<<< HEAD
                       <td style={{ padding: "0.55rem 1rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
                       <td style={{ padding: "0.55rem 1rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
                       <td style={{ padding: "0.55rem 1rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
+=======
+                      <td className="col-hide-mobile" style={{ padding: "0.9rem 1.5rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
+                      <td className="col-hide-mobile" style={{ padding: "0.9rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
+                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
+>>>>>>> a24d7b81b04fcfeba19bacfaae79238e9ca84a30
                         {bid.margin_pct != null ? `${bid.margin_pct}%` : "—"}
                       </td>
                     </tr>
@@ -255,7 +266,7 @@ export default function PipelinePage() {
       ) : (
 
         /* BOARD VIEW */
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="board-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", alignItems: "start" }}>
           {BOARD_COLUMNS.map(col => {
             const colBids  = filtered.filter(b => col.statuses.includes(b.status))
               .sort((a,b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())

@@ -121,13 +121,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-        <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400 }}>{dateStr}</p>
-        <Link href="/bids/new" style={{
-          fontSize: "13px", fontWeight: 600, color: "#fff", background: "var(--accent)",
-          padding: "0.4rem 1rem", borderRadius: "6px", textDecoration: "none",
-        }}>+ New Bid</Link>
-      </div>
+      <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400, marginBottom: "1.25rem" }}>{dateStr}</p>
 
       <div className="kpi-grid" style={{ display: "grid", gap: "0.75rem", marginBottom: "1.5rem" }}>
         <div style={{

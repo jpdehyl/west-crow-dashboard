@@ -122,9 +122,6 @@ export default function PipelinePage() {
               </button>
             ))}
           </div>
-          <Link href="/bids/new" style={{ padding: "0.6rem 1.25rem", background: "var(--ink)", color: "var(--bg)", borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none" }}>
-            + New Bid
-          </Link>
         </div>
       </div>
 

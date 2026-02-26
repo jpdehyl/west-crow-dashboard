@@ -17,18 +17,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={dmSans.variable}
         style={{ fontFamily: "var(--font-sans), sans-serif" }}>
         <div style={{ display: "flex", minHeight: "100vh" }}>
-<<<<<<< HEAD
-          <Sidebar />
-          <main style={{
-            flex: 1,
-            minWidth: 0,
-            padding: "1.5rem 2rem",
-            overflowY: "auto",
-            background: "var(--bg)",
-          }}>
-            {children}
-          </main>
-=======
           {/* Desktop sidebar */}
           <div className="sidebar">
             <Sidebar />
@@ -42,7 +30,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
             <MobileBottomNav />
           </div>
->>>>>>> a24d7b81b04fcfeba19bacfaae79238e9ca84a30
         </div>
       </body>
     </html>

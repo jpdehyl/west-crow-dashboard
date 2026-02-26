@@ -57,16 +57,16 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           return (
             <div key={stage} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
               {!isLast && (
-                <div style={{ position: "absolute", top: "9px", left: "50%", width: "100%", height: "2px", background: i < currentStageIdx ? "var(--terra)" : "var(--border)", zIndex: 0 }} />
+                <div style={{ position: "absolute", top: "9px", left: "50%", width: "100%", height: "2px", background: i < currentStageIdx ? "var(--accent)" : "var(--border)", zIndex: 0 }} />
               )}
-              <div style={{ width: 18, height: 18, borderRadius: "50%", zIndex: 1, background: isComplete ? "var(--terra)" : "var(--border)", border: isCurrent ? "3px solid var(--terra)" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", zIndex: 1, background: isComplete ? "var(--accent)" : "var(--border)", border: isCurrent ? "3px solid var(--accent)" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {isComplete && <span style={{ color: "white", fontSize: "9px", fontWeight: 700 }}>✓</span>}
               </div>
               <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem", color: isComplete ? "var(--ink)" : "var(--ink-faint)" }}>
                 {STAGE_LABEL[stage]}
               </p>
               {event ? (
-                <p style={{ fontSize: "11px", color: "var(--terra)", marginTop: "0.2rem" }}>{formatDateShort(event.date)}</p>
+                <p style={{ fontSize: "11px", color: "var(--accent)", marginTop: "0.2rem" }}>{formatDateShort(event.date)}</p>
               ) : (
                 <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.2rem" }}>
                   {stage === 'decision' && urgent ? `${days}d` : "—"}
@@ -117,7 +117,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents.length - 1 ? "1px solid var(--border)" : "none", textDecoration: "none", color: "var(--ink)", fontSize: "14px", fontWeight: 500 }}
                 className="row-hover">
                 <span>{DOC_LABEL[doc.type] || doc.name}</span>
-                <span style={{ fontSize: "12px", color: "var(--terra)" }}>Open ↗</span>
+                <span style={{ fontSize: "12px", color: "var(--accent)" }}>Open ↗</span>
               </a>
             ))}
           </div>
@@ -130,7 +130,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
         <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
           {[...(bid.timeline as any[])].reverse().map((event: any, i: number) => (
             <div key={i} style={{ display: "flex", gap: "1rem", padding: "0.9rem 0", borderBottom: i < bid.timeline.length - 1 ? "1px solid var(--border)" : "none", alignItems: "flex-start" }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--terra)", marginTop: "5px", flexShrink: 0 }} />
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", marginTop: "5px", flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginRight: "0.5rem" }}>{STAGE_LABEL[event.stage as BidStage] ?? event.stage}</span>
                 <span style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{event.note}</span>

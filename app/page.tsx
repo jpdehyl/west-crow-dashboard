@@ -3,19 +3,19 @@ import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
 import Link from "next/link"
 
 const STATUS: Record<string, { dot: string; label: string }> = {
-  active:   { dot: "#4a6fa8", label: "Active" },
-  sent:     { dot: "#c4963a", label: "Sent" },
-  won:      { dot: "#5a7a5a", label: "Won" },
-  lost:     { dot: "#b85042", label: "Lost" },
-  "no-bid": { dot: "#b5afa5", label: "No Bid" },
+  active:   { dot: "#3b6fa0", label: "Active" },
+  sent:     { dot: "#b8860b", label: "Sent" },
+  won:      { dot: "#3d8c5c", label: "Won" },
+  lost:     { dot: "#c45042", label: "Lost" },
+  "no-bid": { dot: "#a3a3a3", label: "No Bid" },
 }
 
 function Dot({ status }: { status: string }) {
   const s = STATUS[status] || STATUS["no-bid"]
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
-      <span style={{ fontSize: "13px", color: "var(--ink-muted)" }}>{s.label}</span>
+      <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>{s.label}</span>
     </span>
   )
 }
@@ -41,80 +41,53 @@ export default function DashboardPage() {
     weekday: "long", month: "long", day: "numeric"
   })
 
-  const headline = pipeline > 0
-    ? `${formatCurrency(pipeline)} in active pipeline`
-    : "No active bids right now"
-  const subline = urgent.length > 0
-    ? `${urgent.length} bid${urgent.length > 1 ? "s" : ""} due in the next 14 days`
-    : "No urgent deadlines"
-
   return (
     <div style={{ maxWidth: "960px", marginLeft: "-3rem", marginRight: "-3rem", marginTop: "-2.5rem" }}>
 
       {/* ── HERO ── */}
       <div style={{
-        position: "relative",
-        height: "340px",
-        backgroundImage: `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center 40%",
-        overflow: "hidden",
+        background: "var(--accent)",
+        padding: "3rem 3rem 2.5rem",
       }}>
-        {/* Gradient overlay: dark at top edges, fades to warm white at bottom */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.05) 40%, rgba(255,253,248,0.85) 80%, rgba(255,253,248,1) 100%)",
-        }} />
-
-        {/* Hero text — sits low in the image */}
-        <div style={{
-          position: "absolute", bottom: "2.5rem", left: "3rem", right: "3rem",
-        }}>
-          <p style={{
-            fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.7)", fontWeight: 500, marginBottom: "0.6rem",
-            textShadow: "0 1px 3px rgba(0,0,0,0.3)",
-          }}>{dateStr}</p>
-          <h1 style={{
-            fontFamily: "var(--font-serif), serif",
-            fontSize: "2.75rem", fontWeight: 400,
-            letterSpacing: "-0.03em", lineHeight: 1.05,
-            color: "#fff",
-            textShadow: "0 2px 12px rgba(0,0,0,0.25)",
-            marginBottom: "0.5rem",
-          }}>{headline}</h1>
-          <p style={{
-            fontSize: "15px", color: "rgba(255,255,255,0.8)",
-            textShadow: "0 1px 4px rgba(0,0,0,0.2)",
-          }}>{subline}</p>
-        </div>
+        <p style={{
+          fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "rgba(255,255,255,0.5)", fontWeight: 500, marginBottom: "1rem",
+        }}>{dateStr}</p>
+        <h1 style={{
+          fontSize: "3rem", fontWeight: 600,
+          letterSpacing: "-0.03em", lineHeight: 1.05,
+          color: "#ffffff",
+          marginBottom: "0.5rem",
+        }}>{formatCurrency(pipeline)}</h1>
+        <p style={{
+          fontSize: "15px", color: "rgba(255,255,255,0.6)", fontWeight: 400,
+        }}>in active pipeline · {active.length + sent.length} open bids</p>
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ padding: "2.5rem 3rem" }}>
+      <div style={{ padding: "2rem 3rem 2.5rem" }}>
 
-        {/* KPIs */}
+        {/* KPIs — asymmetric layout */}
         <div style={{
-          display: "grid", gridTemplateColumns: "repeat(4,1fr)",
-          border: "1px solid var(--border)", borderRadius: "12px",
-          overflow: "hidden", marginBottom: "3rem",
+          display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+          gap: "1.5rem",
+          marginBottom: "2.5rem",
         }}>
-          {[
-            { label: "Pipeline",   value: formatCurrency(pipeline),    note: `${active.length + sent.length} open` },
-            { label: "Active",     value: String(active.length),       note: "in estimation" },
-            { label: "Awaiting",   value: String(sent.length),         note: "pending decision" },
-            { label: "Win Rate",   value: `${winRate}%`,               note: `${won.length}/${decided.length} decided` },
-          ].map(({ label, value, note }, i, arr) => (
-            <div key={label} style={{
-              padding: "1.5rem 1.75rem",
-              background: "var(--bg)",
-              borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
-            }}>
-              <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.6rem" }}>{label}</p>
-              <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1, marginBottom: "0.35rem" }}>{value}</p>
-              <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{note}</p>
-            </div>
-          ))}
+          <div style={{ padding: "1.25rem 0" }}>
+            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Active</p>
+            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{active.length}</p>
+            <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>in estimation</p>
+          </div>
+          <div style={{ padding: "1.25rem 0" }}>
+            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Awaiting</p>
+            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{sent.length}</p>
+            <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>pending decision</p>
+          </div>
+          <div style={{ padding: "1.25rem 0" }}>
+            <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>Win Rate</p>
+            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{winRate}%</p>
+            <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>{won.length}/{decided.length} decided</p>
+          </div>
         </div>
 
         {/* ── ON SITE ── */}
@@ -122,16 +95,15 @@ export default function DashboardPage() {
           const today = new Date(); today.setHours(0,0,0,0)
           const onSite = PROJECTS.filter(p => {
             const start = new Date(p.start_date); start.setHours(0,0,0,0)
-            const end   = new Date(p.end_date);   end.setHours(0,0,0,0)
             return p.status === 'active' && start <= today
           })
           if (onSite.length === 0) return null
           return (
-            <div style={{ marginBottom: "3rem" }}>
-              <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "1rem" }}>
+            <div style={{ marginBottom: "2.5rem" }}>
+              <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "0.75rem" }}>
                 On Site
               </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {onSite.map((project, i) => {
                   const spent    = project.costs.reduce((s,c) => s + c.amount, 0)
                   const budget   = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
@@ -149,18 +121,18 @@ export default function DashboardPage() {
                       className="row-hover"
                       style={{
                         display: "block",
-                        padding: "1rem 0",
+                        padding: "0.85rem 0",
                         textDecoration: "none",
                         borderBottom: isLast ? "none" : "1px solid var(--border)",
                       }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                         <div>
-                          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{project.project_name}</span>
-                          <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.75rem" }}>{project.client}</span>
+                          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{project.project_name}</span>
+                          <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.6rem" }}>{project.client}</span>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexShrink: 0 }}>
                           <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Day {elapsed} · {daysLeft}d left</span>
-                          <span style={{ fontFamily: "var(--font-serif), serif", fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
                             {formatCurrency(project.contract_value)}
                           </span>
                           <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 7px", borderRadius: "4px" }}>
@@ -168,10 +140,9 @@ export default function DashboardPage() {
                           </span>
                         </div>
                       </div>
-                      {/* Dual progress bars */}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
                         <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.15rem" }}>
                             <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Budget</span>
                             <span style={{ fontSize: "10px", color: pct > 85 ? "var(--terra)" : "var(--ink-faint)", fontWeight: pct > 85 ? 600 : 400 }}>{pct}%</span>
                           </div>
@@ -180,7 +151,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.15rem" }}>
                             <span style={{ fontSize: "10px", color: "var(--ink-faint)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Timeline</span>
                             <span style={{ fontSize: "10px", color: "var(--ink-faint)" }}>{timePct}%</span>
                           </div>
@@ -197,13 +168,18 @@ export default function DashboardPage() {
           )
         })()}
 
-        {/* Urgent bids */}
+        {/* ── URGENT BIDS ── */}
         {urgent.length > 0 && (
-          <div style={{ marginBottom: "3rem" }}>
-            <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: "1rem" }}>
+          <div style={{
+            marginBottom: "2.5rem",
+            background: "var(--gold-light)",
+            borderRadius: "8px",
+            padding: "1.25rem 1.5rem",
+          }}>
+            <h2 style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--gold)", marginBottom: "0.6rem" }}>
               Due in 14 days
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {urgent.map((bid, i) => {
                 const days = daysUntil(bid.deadline)
                 const isLast = i === urgent.length - 1
@@ -212,21 +188,21 @@ export default function DashboardPage() {
                     className="row-hover"
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "0.9rem 0", textDecoration: "none",
-                      borderBottom: isLast ? "none" : "1px solid var(--border)",
+                      padding: "0.65rem 0", textDecoration: "none",
+                      borderBottom: isLast ? "none" : "1px solid rgba(184,134,11,0.15)",
                     }}>
                     <div>
-                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{bid.project_name}</span>
-                      <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.75rem" }}>{bid.client}</span>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{bid.project_name}</span>
+                      <span style={{ fontSize: "13px", color: "var(--ink-muted)", marginLeft: "0.6rem" }}>{bid.client}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
                       <span style={{
                         fontSize: "12px", fontWeight: 600,
                         color: days <= 5 ? "var(--terra)" : "var(--gold)",
-                        background: days <= 5 ? "var(--terra-light)" : "var(--gold-light)",
+                        background: days <= 5 ? "var(--terra-light)" : "rgba(255,255,255,0.7)",
                         padding: "3px 8px", borderRadius: "5px"
                       }}>{days}d</span>
-                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", fontFamily: "var(--font-serif), serif" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
                         {formatCurrency(bid.bid_value)}
                       </span>
                       <Dot status={bid.status} />
@@ -238,16 +214,13 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Divider */}
-        <div style={{ height: "1px", background: "var(--border)", marginBottom: "3rem" }} />
-
-        {/* Recent activity */}
+        {/* ── RECENT BIDS ── */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.6rem" }}>
             <h2 style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
               Recent Bids
             </h2>
-            <Link href="/bids" style={{ fontSize: "12px", color: "var(--terra)", textDecoration: "none" }}>All bids →</Link>
+            <Link href="/bids" style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>All bids →</Link>
           </div>
           <div>
             {recent.map((bid, i) => (
@@ -255,16 +228,16 @@ export default function DashboardPage() {
                 className="row-hover"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "0.85rem 0", textDecoration: "none",
+                  padding: "0.55rem 0", textDecoration: "none",
                   borderBottom: i < recent.length - 1 ? "1px solid var(--border)" : "none",
                 }}>
                 <div>
-                  <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{bid.project_name}</span>
-                  <span style={{ fontSize: "13px", color: "var(--ink-faint)", marginLeft: "0.75rem" }}>{bid.client}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>{bid.project_name}</span>
+                  <span style={{ fontSize: "12px", color: "var(--ink-faint)", marginLeft: "0.6rem" }}>{bid.client}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-                  <span style={{ fontSize: "13px", color: "var(--ink-faint)", whiteSpace: "nowrap" }}>{formatDate(bid.deadline)}</span>
-                  <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", fontFamily: "var(--font-serif), serif", whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
+                  <span style={{ fontSize: "12px", color: "var(--ink-faint)", whiteSpace: "nowrap" }}>{formatDate(bid.deadline)}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", whiteSpace: "nowrap" }}>
                     {formatCurrency(bid.bid_value)}
                   </span>
                   <Dot status={bid.status} />

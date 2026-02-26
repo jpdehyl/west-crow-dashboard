@@ -70,7 +70,7 @@ export default function CostForm({ projectId }: { projectId: string }) {
             <input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={inp} required />
           </div>
           <div>
-            <label style={lbl}>Amount (CAD) <span style={{ color: "var(--terra)" }}>*</span></label>
+            <label style={lbl}>Amount (CAD) <span style={{ color: "var(--accent)" }}>*</span></label>
             <input type="number" value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="2500" min="0" step="0.01" style={inp} required />
           </div>
           <div>
@@ -90,7 +90,7 @@ export default function CostForm({ projectId }: { projectId: string }) {
         </div>
 
         <div style={{ marginBottom: "1.25rem" }}>
-          <label style={lbl}>Description <span style={{ color: "var(--terra)" }}>*</span></label>
+          <label style={lbl}>Description <span style={{ color: "var(--accent)" }}>*</span></label>
           <input type="text" value={form.description} onChange={e => set('description', e.target.value)} placeholder="e.g. Oscar — 3 days labour" style={inp} required />
         </div>
 

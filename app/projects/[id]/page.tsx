@@ -12,14 +12,14 @@ const WEATHER_ICON: Record<string, string> = {
   Clear: "☀", Overcast: "☁", Rain: "🌧", Snow: "❄", Fog: "🌫",
 }
 const COST_COLOR: Record<string, string> = {
-  labour: "#4a6fa8", materials: "#c4963a", equipment: "#7a5a8a",
-  subcontractor: "#5a7a5a", other: "#b5afa5",
+  labour: "#3b6fa0", materials: "#b8860b", equipment: "#7a5a8a",
+  subcontractor: "#3d8c5c", other: "#a3a3a3",
 }
 
 function SectionMarker({ n, title, date }: { n: string; title: string; date?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "3rem 0 1.75rem" }}>
-      <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", color: "var(--terra)", fontFamily: "var(--font-sans), sans-serif", flexShrink: 0 }}>{n}</span>
+      <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", color: "var(--accent)", fontFamily: "var(--font-sans), sans-serif", flexShrink: 0 }}>{n}</span>
       <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
       <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-muted)", flexShrink: 0 }}>{title}</span>
       {date && (<><div style={{ width: "1px", height: "12px", background: "var(--border)" }} /><span style={{ fontSize: "11px", color: "var(--ink-faint)", flexShrink: 0 }}>{date}</span></>)}
@@ -29,7 +29,7 @@ function SectionMarker({ n, title, date }: { n: string; title: string; date?: st
 
 function StoryCard({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return (
-    <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderLeft: `3px solid ${accent || "var(--terra)"}`, borderRadius: "0 10px 10px 0", padding: "1.25rem 1.5rem" }}>
+    <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderLeft: `3px solid ${accent || "var(--accent)"}`, borderRadius: "0 10px 10px 0", padding: "1.25rem 1.5rem" }}>
       {children}
     </div>
   )
@@ -151,14 +151,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             return (
               <div key={stage.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
                 {!isLast && (
-                  <div style={{ position: "absolute", top: "9px", left: "50%", width: "100%", height: "2px", background: i < currentStageIdx ? "var(--terra)" : "var(--border)", zIndex: 0 }} />
+                  <div style={{ position: "absolute", top: "9px", left: "50%", width: "100%", height: "2px", background: i < currentStageIdx ? "var(--accent)" : "var(--border)", zIndex: 0 }} />
                 )}
-                <div style={{ width: 18, height: 18, borderRadius: "50%", zIndex: 1, flexShrink: 0, background: isDone ? "var(--terra)" : "var(--border)", border: isActive ? "3px solid var(--terra)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", zIndex: 1, flexShrink: 0, background: isDone ? "var(--accent)" : "var(--border)", border: isActive ? "3px solid var(--accent)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {isDone && !isActive && <span style={{ color: "white", fontSize: "8px", fontWeight: 700 }}>✓</span>}
-                  {isActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--terra)", display: "block" }} />}
+                  {isActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "block" }} />}
                 </div>
                 <p style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.4rem", color: isDone ? "var(--ink)" : "var(--ink-faint)", textAlign: "center" }}>{stage.label}</p>
-                <p style={{ fontSize: "10px", color: isDone ? "var(--terra)" : "var(--ink-faint)", marginTop: "0.1rem", textAlign: "center" }}>
+                <p style={{ fontSize: "10px", color: isDone ? "var(--accent)" : "var(--ink-faint)", marginTop: "0.1rem", textAlign: "center" }}>
                   {stage.date ? formatDateShort(stage.date) : "—"}
                 </p>
               </div>
@@ -455,7 +455,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {bid && (
         <div style={{ marginTop: "3rem", padding: "1rem 1.5rem", background: "var(--bg-subtle)", borderRadius: "8px", border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontSize: "13px", color: "var(--ink-muted)" }}>View original bid — {formatCurrency(bid.bid_value)} · {bid.estimator}</p>
-          <Link href={`/bids/${bid.id}`} style={{ fontSize: "12px", color: "var(--terra)", textDecoration: "none" }}>Open bid file →</Link>
+          <Link href={`/bids/${bid.id}`} style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none" }}>Open bid file →</Link>
         </div>
       )}
     </div>

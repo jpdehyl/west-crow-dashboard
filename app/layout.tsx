@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <main style={{
             flex: 1,
+            minWidth: 0,
             padding: "2.5rem 3rem",
             overflowY: "auto",
             background: "var(--bg)",

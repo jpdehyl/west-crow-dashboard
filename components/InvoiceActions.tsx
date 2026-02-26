@@ -40,7 +40,7 @@ export default function InvoiceActions({ projectId, invoiceId, isSent, isPaid }:
           onClick={() => mark('sent_date')}
           style={{
             padding: "0.45rem 0.9rem", fontSize: "12px", fontWeight: 600,
-            color: "#c4963a", border: "1px solid rgba(196,150,58,0.4)",
+            color: "var(--gold)", border: "1px solid var(--gold)",
             background: "var(--bg)", borderRadius: "7px", cursor: "pointer", fontFamily: "inherit",
             opacity: loading ? 0.6 : 1,
           }}
@@ -54,7 +54,7 @@ export default function InvoiceActions({ projectId, invoiceId, isSent, isPaid }:
           onClick={() => mark('paid_date')}
           style={{
             padding: "0.45rem 0.9rem", fontSize: "12px", fontWeight: 600,
-            color: "#5a7a5a", border: "1px solid rgba(90,122,90,0.4)",
+            color: "var(--sage)", border: "1px solid var(--sage)",
             background: "var(--bg)", borderRadius: "7px", cursor: "pointer", fontFamily: "inherit",
             opacity: loading ? 0.6 : 1,
           }}

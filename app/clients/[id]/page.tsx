@@ -40,7 +40,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
             <span style={{ fontSize: "14px", color: "var(--ink-muted)" }}>{client.contact_name}</span>
             <span style={{ color: "var(--border)" }}>·</span>
-            <a href={`mailto:${client.email}`} style={{ fontSize: "14px", color: "var(--terra)", textDecoration: "none" }}>
+            <a href={`mailto:${client.email}`} style={{ fontSize: "14px", color: "var(--accent)", textDecoration: "none" }}>
               {client.email}
             </a>
             <span style={{ color: "var(--border)" }}>·</span>

@@ -27,9 +27,9 @@ export function statusLabel(s: BidStatus): string {
 }
 
 export const STATUS_COLOR: Record<BidStatus, string> = {
-  active:   '#4a6fa8',
-  sent:     '#c4963a',
-  won:      '#5a7a5a',
-  lost:     '#b85042',
-  'no-bid': '#b5afa5',
+  active:   '#3b6fa0',
+  sent:     '#b8860b',
+  won:      '#3d8c5c',
+  lost:     '#c45042',
+  'no-bid': '#a3a3a3',
 }

@@ -17,10 +17,10 @@ const STAGES: { key: BidStatus; label: string }[] = [
 ]
 
 const BOARD_COLUMNS = [
-  { key: 'estimating', statuses: ['active'],        label: 'Estimating', color: '#4a6fa8' },
-  { key: 'submitted',  statuses: ['sent'],          label: 'Submitted',  color: '#c4963a' },
-  { key: 'won',        statuses: ['won'],           label: 'Won',        color: '#5a7a5a' },
-  { key: 'closed',     statuses: ['lost','no-bid'], label: 'Closed',     color: '#b5afa5' },
+  { key: 'estimating', statuses: ['active'],        label: 'Estimating' },
+  { key: 'submitted',  statuses: ['sent'],          label: 'Submitted' },
+  { key: 'won',        statuses: ['won'],           label: 'Won' },
+  { key: 'closed',     statuses: ['lost','no-bid'], label: 'Closed' },
 ]
 
 const SORT_LABEL: Record<SortKey, string> = {
@@ -85,7 +85,7 @@ export default function PipelinePage() {
 
   function SortIcon({ col }: { col: SortKey }) {
     if (sortKey !== col) return <span style={{ color: "var(--border)", marginLeft: "0.25rem" }}>↕</span>
-    return <span style={{ color: "var(--terra)", marginLeft: "0.25rem" }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+    return <span style={{ color: "var(--accent)", marginLeft: "0.25rem" }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   const colHeaders: { key: SortKey; label: string; align: 'left' | 'right' }[] = [
@@ -194,7 +194,7 @@ export default function PipelinePage() {
           {filtered.length === 0 ? (
             <div style={{ padding: "3rem", textAlign: "center", color: "var(--ink-faint)", fontSize: "13px" }}>
               No bids match your filters.{" "}
-              <button onClick={() => { setFilterStatus(null); setSearch('') }} style={{ background: "none", border: "none", color: "var(--terra)", cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}>Clear</button>
+              <button onClick={() => { setFilterStatus(null); setSearch('') }} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", textDecoration: "underline" }}>Clear</button>
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -204,7 +204,7 @@ export default function PipelinePage() {
                     <th key={key} onClick={() => handleSort(key)} style={{
                       textAlign: align, padding: "0.7rem 1.5rem",
                       fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
-                      color: sortKey === key ? "var(--terra)" : "var(--ink-faint)",
+                      color: sortKey === key ? "var(--accent)" : "var(--ink-faint)",
                       fontWeight: 500, borderBottom: "1px solid var(--border)",
                       whiteSpace: "nowrap", cursor: "pointer", userSelect: "none",
                     }}>
@@ -216,7 +216,7 @@ export default function PipelinePage() {
                   <th onClick={() => handleSort('margin_pct')} style={{
                     textAlign: "right", padding: "0.7rem 1.5rem",
                     fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase",
-                    color: sortKey === 'margin_pct' ? "var(--terra)" : "var(--ink-faint)",
+                    color: sortKey === 'margin_pct' ? "var(--accent)" : "var(--ink-faint)",
                     fontWeight: 500, borderBottom: "1px solid var(--border)",
                     whiteSpace: "nowrap", cursor: "pointer", userSelect: "none",
                   }}>
@@ -231,20 +231,20 @@ export default function PipelinePage() {
                   const border = i < filtered.length - 1 ? "1px solid var(--border)" : "none"
                   return (
                     <tr key={bid.id} className="row-hover">
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
-                        <Link href={`/bids/${bid.id}`} style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 500 }}>{bid.project_name}</Link>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                        <Link href={`/bids/${bid.id}`} style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>{bid.project_name}</Link>
                       </td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.client}</td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, textAlign: "right", fontWeight: 500, fontFamily: "var(--font-serif), serif", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.client}</td>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, textAlign: "right", fontWeight: 500, fontFamily: "var(--font-serif), serif", whiteSpace: "nowrap" }}>
                         {formatCurrency(bid.bid_value)}
                       </td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, whiteSpace: "nowrap" }}>
                         <span style={{ color: urgent ? "var(--terra)" : "var(--ink-muted)" }}>{formatDate(bid.deadline)}</span>
                         {urgent && <span style={{ marginLeft: "0.4rem", fontSize: "11px", background: "var(--terra-light)", color: "var(--terra)", padding: "1px 5px", borderRadius: "4px", fontWeight: 500 }}>{days}d</span>}
                       </td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
-                      <td style={{ padding: "0.9rem 1.5rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border }}><StatusDot status={bid.status} /></td>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{bid.estimator}</td>
+                      <td style={{ padding: "0.65rem 1.5rem", borderBottom: border, textAlign: "right", color: bid.margin_pct ? "var(--sage)" : "var(--ink-faint)", whiteSpace: "nowrap" }}>
                         {bid.margin_pct != null ? `${bid.margin_pct}%` : "—"}
                       </td>
                     </tr>
@@ -266,7 +266,7 @@ export default function PipelinePage() {
             return (
               <div key={col.key}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", padding: "0 0.25rem" }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: col.color, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", display: "inline-block", flexShrink: 0 }} />
                   <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>{col.label}</span>
                   <span style={{ fontSize: "11px", color: "var(--ink-faint)", marginLeft: "auto" }}>{colBids.length}</span>
                 </div>
@@ -279,7 +279,7 @@ export default function PipelinePage() {
                     const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)
                     return (
                       <Link key={bid.id} href={`/bids/${bid.id}`} style={{ textDecoration: "none" }}>
-                        <div className="row-hover" style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.1rem", cursor: "pointer", borderTop: `3px solid ${col.color}` }}>
+                        <div className="row-hover" style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.1rem", cursor: "pointer", borderTop: "3px solid var(--accent)" }}>
                           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)", marginBottom: "0.3rem", lineHeight: 1.3 }}>{bid.project_name}</p>
                           <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginBottom: "0.85rem" }}>{bid.client}</p>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

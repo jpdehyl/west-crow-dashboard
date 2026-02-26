@@ -91,7 +91,7 @@ export default function LogForm({ projectId }: { projectId: string }) {
         </div>
 
         <div style={{ marginBottom: "0.85rem" }}>
-          <label style={lbl}>Work Performed <span style={{ color: "var(--terra)" }}>*</span></label>
+          <label style={lbl}>Work Performed <span style={{ color: "var(--accent)" }}>*</span></label>
           <textarea
             value={form.work_performed}
             onChange={e => set('work_performed', e.target.value)}

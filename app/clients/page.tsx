@@ -40,7 +40,7 @@ export default function ClientsPage() {
                   </div>
                   <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginBottom: "0.75rem" }}>
                     {client.contact_name} ·{" "}
-                    <span style={{ color: "var(--terra)" }}>{client.email}</span>
+                    <span style={{ color: "var(--accent)" }}>{client.email}</span>
                     {" "}· {client.phone}
                   </p>
                   {recent.length > 0 && (
@@ -69,7 +69,7 @@ export default function ClientsPage() {
                     {clientBids.length} bid{clientBids.length !== 1 ? 's' : ''}
                     {winRate !== null ? ` · ${winRate}% win` : ''}
                   </p>
-                  <p style={{ fontSize: "11px", color: "var(--terra)", marginTop: "0.4rem" }}>View →</p>
+                  <p style={{ fontSize: "11px", color: "var(--accent)", marginTop: "0.4rem" }}>View →</p>
                 </div>
               </Link>
             </div>

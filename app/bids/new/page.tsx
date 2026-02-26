@@ -86,7 +86,7 @@ export default function NewBidPage() {
           {/* Project name */}
           <div style={{ padding: "1.5rem 1.75rem", borderBottom: "1px solid var(--border)" }}>
             <label style={labelStyle}>
-              Project Name <span style={{ color: "var(--terra)" }}>*</span>
+              Project Name <span style={{ color: "var(--accent)" }}>*</span>
             </label>
             <input
               required
@@ -100,7 +100,7 @@ export default function NewBidPage() {
           {/* Client + Estimator */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
-              <label style={labelStyle}>Client <span style={{ color: "var(--terra)" }}>*</span></label>
+              <label style={labelStyle}>Client <span style={{ color: "var(--accent)" }}>*</span></label>
               <select required name="client" style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="">Select client…</option>
                 {clients.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -118,7 +118,7 @@ export default function NewBidPage() {
           {/* Value + Deadline */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1.5rem 1.75rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
-              <label style={labelStyle}>Bid Value (CAD) <span style={{ color: "var(--terra)" }}>*</span></label>
+              <label style={labelStyle}>Bid Value (CAD) <span style={{ color: "var(--accent)" }}>*</span></label>
               <input
                 required
                 name="bid_value"
@@ -130,7 +130,7 @@ export default function NewBidPage() {
               />
             </div>
             <div>
-              <label style={labelStyle}>Bid Deadline <span style={{ color: "var(--terra)" }}>*</span></label>
+              <label style={labelStyle}>Bid Deadline <span style={{ color: "var(--accent)" }}>*</span></label>
               <input
                 required
                 name="deadline"

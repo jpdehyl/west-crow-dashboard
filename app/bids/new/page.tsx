@@ -40,17 +40,21 @@ export default function NewBidPage() {
     setLoading(true)
     const fd = new FormData(e.currentTarget)
     try {
+      const clientId  = fd.get('client_id') as string
+      const clientObj = clients.find((c: any) => c.id === clientId)
       const res = await fetch('/api/bids', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_name: fd.get('project_name'),
-          client:       fd.get('client'),
-          bid_value:    Number(fd.get('bid_value')),
-          deadline:     fd.get('deadline'),
-          estimator:    fd.get('estimator'),
-          notes:        fd.get('notes'),
-          source:       fd.get('source'),
+          project_name:   fd.get('project_name'),
+          client:         clientObj?.name ?? fd.get('client') ?? '',
+          client_id:      clientId ?? '',
+          bid_value:      Number(fd.get('bid_value')),
+          deadline:       fd.get('deadline'),
+          estimator:      fd.get('estimator'),
+          notes:          fd.get('notes'),
+          source:         fd.get('source'),
+          dropbox_folder: fd.get('dropbox_folder') ?? '',
         }),
       })
       if (!res.ok) throw new Error('Save failed')
@@ -101,10 +105,9 @@ export default function NewBidPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1rem 1.25rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
               <label style={labelStyle}>Client <span style={{ color: "var(--accent)" }}>*</span></label>
-              <select required name="client" style={{ ...inputStyle, cursor: "pointer" }}>
+              <select required name="client_id" style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="">Select client…</option>
-                {clients.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                <option value="__new">+ New client</option>
+                {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
@@ -161,6 +164,22 @@ export default function NewBidPage() {
                 style={inputStyle}
               />
             </div>
+          </div>
+
+          {/* Dropbox folder */}
+          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border)" }}>
+            <label style={labelStyle}>
+              Dropbox Folder (Ean's folder for this bid)
+            </label>
+            <input
+              name="dropbox_folder"
+              type="url"
+              placeholder="https://www.dropbox.com/sh/… — paste Ean's folder link"
+              style={inputStyle}
+            />
+            <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.4rem" }}>
+              Clark will use this to access drawings, hazmat reports, and specs
+            </p>
           </div>
 
           {/* Notes */}

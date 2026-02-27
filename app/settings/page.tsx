@@ -1,26 +1,19 @@
 "use client"
 import { useState } from "react"
 
-const initialMembers = [
-  { id: 1, name: "Jordan West", email: "jordan@westcrow.ca", role: "Admin" },
-  { id: 2, name: "Taylor Crowe", email: "taylor@westcrow.ca", role: "Estimator" },
-  { id: 3, name: "Morgan Ellis", email: "morgan@westcrow.ca", role: "Superintendent" },
-  { id: 4, name: "Casey Parr", email: "casey@westcrow.ca", role: "Viewer" },
-]
-
 const roles = ["Admin", "Estimator", "Superintendent", "Viewer"]
 
 export default function SettingsPage() {
   const [company, setCompany] = useState({
-    name: "West Crow Construction Ltd.",
-    address: "123 Industrial Rd, Calgary, AB T2E 6V1",
-    phone: "(403) 555-0199",
-    email: "info@westcrow.ca",
+    name: "West Crow Contracting",
+    address: "Vancouver, BC",
+    phone: "",
+    email: "dave@westcrow.ca",
   })
 
-  const [members, setMembers] = useState(initialMembers)
-  const [newMember, setNewMember] = useState({ name: "", email: "", role: "Viewer" })
-  const [showAddMember, setShowAddMember] = useState(false)
+  const [members] = useState<any[]>([])
+  const [newMember] = useState({ name: "", email: "", role: "Viewer" })
+  const [showAddMember] = useState(false)
 
   const [security, setSecurity] = useState({
     passwordRequirements: true,
@@ -39,21 +32,6 @@ export default function SettingsPage() {
     projectUpdates: true,
     invoiceReminders: false,
   })
-
-  const addMember = () => {
-    if (!newMember.name || !newMember.email) return
-    setMembers([...members, { ...newMember, id: Date.now() }])
-    setNewMember({ name: "", email: "", role: "Viewer" })
-    setShowAddMember(false)
-  }
-
-  const removeMember = (id: number) => {
-    setMembers(members.filter((m) => m.id !== id))
-  }
-
-  const updateMemberRole = (id: number, role: string) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, role } : m)))
-  }
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -123,87 +101,30 @@ export default function SettingsPage() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={sectionHeading}>Team &amp; Roles</h2>
-        <div style={infoBanner}>
-          Authentication and role enforcement coming soon.
-        </div>
         <div style={card}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                <th style={thStyle}>Name</th>
-                <th style={thStyle}>Email</th>
-                <th style={thStyle}>Role</th>
-                <th style={{ ...thStyle, width: 60 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.id} className="row-hover" style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={tdStyle}>{m.name}</td>
-                  <td style={{ ...tdStyle, color: "var(--ink-muted)" }}>{m.email}</td>
-                  <td style={tdStyle}>
-                    <select
-                      value={m.role}
-                      onChange={(e) => updateMemberRole(m.id, e.target.value)}
-                      style={selectStyle}
-                    >
-                      {roles.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={tdStyle}>
-                    <button onClick={() => removeMember(m.id)} style={removeBtnStyle} title="Remove member">
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {showAddMember ? (
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-end", flexWrap: "wrap" }}>
-              <label style={{ ...fieldLabel, flex: 1, minWidth: 140 }}>
-                Name
-                <input
-                  style={inputStyle}
-                  value={newMember.name}
-                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                  placeholder="Full name"
-                />
-              </label>
-              <label style={{ ...fieldLabel, flex: 1, minWidth: 180 }}>
-                Email
-                <input
-                  style={inputStyle}
-                  value={newMember.email}
-                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-                  placeholder="email@westcrow.ca"
-                />
-              </label>
-              <label style={{ ...fieldLabel, minWidth: 120 }}>
-                Role
-                <select
-                  value={newMember.role}
-                  onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-                  style={selectStyle}
-                >
-                  {roles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </label>
-              <div style={{ display: "flex", gap: "0.4rem", paddingBottom: 2 }}>
-                <button onClick={addMember} style={primaryBtn}>Add</button>
-                <button onClick={() => setShowAddMember(false)} style={secondaryBtn}>Cancel</button>
+          {[
+            { name: "Dave Abercrombie", email: "dave@westcrow.ca", role: "Admin / Owner" },
+            { name: "JP Dominguez",     email: "juanpadominguez@gmail.com", role: "Estimator" },
+            { name: "Ean",              email: "",                           role: "Bid Coordinator" },
+          ].map((m, i, arr) => (
+            <div key={m.name} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "0.75rem 0",
+              borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
+              fontSize: "14px",
+            }}>
+              <div>
+                <p style={{ fontWeight: 500, color: "var(--ink)", marginBottom: "0.1rem" }}>{m.name}</p>
+                {m.email && <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>{m.email}</p>}
               </div>
+              <span style={{ fontSize: "12px", color: "var(--ink-muted)", background: "var(--bg-subtle)", padding: "0.25rem 0.6rem", borderRadius: "5px", border: "1px solid var(--border)" }}>
+                {m.role}
+              </span>
             </div>
-          ) : (
-            <button onClick={() => setShowAddMember(true)} style={{ ...secondaryBtn, marginTop: "1rem" }}>
-              + Add Member
-            </button>
-          )}
+          ))}
+          <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
+            Role-based access control coming in Phase 2.
+          </p>
         </div>
       </section>
 

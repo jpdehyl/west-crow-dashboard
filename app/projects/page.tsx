@@ -16,6 +16,17 @@ export default async function ProjectsPage() {
         <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>Projects</h1>
       </div>
 
+      {PROJECTS.length === 0 && (
+        <div style={{
+          border: "1px dashed var(--border)", borderRadius: "12px",
+          padding: "3rem 2rem", textAlign: "center", color: "var(--ink-faint)",
+        }}>
+          <p style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🏗</p>
+          <p style={{ fontSize: "1rem", fontWeight: 500, color: "var(--ink)", marginBottom: "0.4rem" }}>No active projects yet</p>
+          <p style={{ fontSize: "13px" }}>Projects appear here when a bid is marked as Won. First job starts March 10.</p>
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {PROJECTS.map((project: any) => {
           const totalCosts = project.costs.reduce((s: number, c: any) => s + c.amount, 0)

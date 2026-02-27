@@ -1,95 +1,133 @@
-// Sheets API client — calls Google Apps Script web app
-// Falls back to static seed data if SHEETS_API_URL is not set
+// Data layer — Vercel KV backend
+// Replaces the Google Apps Script / SHEETS_API_URL approach.
+// KV keys: "bids", "clients", "projects"
+// On first run, seeds with empty arrays (no static seed data).
 
-import { BIDS, PROJECTS, CLIENTS } from './data'
+import { kv } from '@vercel/kv'
 
-const API_URL = process.env.SHEETS_API_URL
-const API_KEY = process.env.SHEETS_API_KEY || 'wc_2026_xK9mP'
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function call(path: string, method = 'GET', body?: object) {
-  if (!API_URL) return null
-  try {
-    const url = new URL(API_URL)
-    url.searchParams.set('key', API_KEY)
-    url.searchParams.set('path', path)
-    if (method !== 'GET' && method !== 'POST') {
-      url.searchParams.set('method', method)
-    }
-    const isWrite = method !== 'GET'
-    const res = await fetch(url.toString(), {
-      method: method === 'GET' ? 'GET' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-      next: { revalidate: isWrite ? 0 : 60 },
-      cache: isWrite ? 'no-store' : undefined,
-      redirect: 'follow',
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    // If GAS returns an error object, treat as miss → fallback to seed
-    if (data && typeof data === 'object' && !Array.isArray(data) && data.error) return null
-    return data
-  } catch {
-    return null
+async function kvGet<T>(key: string): Promise<T[]> {
+  const val = await kv.get<T[]>(key)
+  if (!val) {
+    await kv.set(key, [])
+    return []
   }
+  return val
 }
 
+async function kvSet<T>(key: string, data: T[]): Promise<void> {
+  await kv.set(key, data)
+}
+
+// ── Bids ─────────────────────────────────────────────────────────────────────
+
 export async function getBids() {
-  return (await call('bids')) ?? BIDS
+  return kvGet<any>('bids')
 }
 
 export async function getBid(id: string) {
-  return (await call(`bids/${id}`)) ?? BIDS.find(b => b.id === id) ?? null
+  const bids = await getBids()
+  return bids.find((b: any) => b.id === id) ?? null
 }
 
 export async function createBid(data: object) {
-  return call('bids', 'POST', data)
+  const bids = await getBids()
+  const bid = { created_at: new Date().toISOString(), ...data }
+  bids.push(bid)
+  await kvSet('bids', bids)
+  return bid
 }
 
 export async function updateBid(id: string, data: object) {
-  return call(`bids/${id}`, 'PATCH', data)
+  const bids = await getBids()
+  const idx = bids.findIndex((b: any) => b.id === id)
+  if (idx === -1) return null
+  bids[idx] = { ...bids[idx], ...data }
+  await kvSet('bids', bids)
+  return bids[idx]
 }
+
+// ── Projects ──────────────────────────────────────────────────────────────────
 
 export async function getProjects() {
-  return (await call('projects')) ?? PROJECTS
-}
-
-export async function addDailyLog(projectId: string, data: object) {
-  return call(`projects/${projectId}/logs`, 'POST', data)
-}
-
-export async function addCost(projectId: string, data: object) {
-  return call(`projects/${projectId}/costs`, 'POST', data)
-}
-
-export async function createInvoice(projectId: string, data: object) {
-  return call(`projects/${projectId}/invoices`, 'POST', data)
-}
-
-export async function updateInvoice(projectId: string, data: object) {
-  return call(`projects/${projectId}/invoices`, 'PATCH', data)
+  return kvGet<any>('projects')
 }
 
 export async function getProject(id: string) {
   const all = await getProjects()
-  return all.find((p: { id: string }) => p.id === id) ?? null
+  return all.find((p: any) => p.id === id) ?? null
 }
 
+export async function addDailyLog(projectId: string, data: object) {
+  const projects = await getProjects()
+  const idx = projects.findIndex((p: any) => p.id === projectId)
+  if (idx === -1) return null
+  projects[idx].logs = [...(projects[idx].logs ?? []), { ...data, created_at: new Date().toISOString() }]
+  await kvSet('projects', projects)
+  return projects[idx]
+}
+
+export async function addCost(projectId: string, data: object) {
+  const projects = await getProjects()
+  const idx = projects.findIndex((p: any) => p.id === projectId)
+  if (idx === -1) return null
+  projects[idx].costs = [...(projects[idx].costs ?? []), { ...data, created_at: new Date().toISOString() }]
+  await kvSet('projects', projects)
+  return projects[idx]
+}
+
+export async function createInvoice(projectId: string, data: object) {
+  const projects = await getProjects()
+  const idx = projects.findIndex((p: any) => p.id === projectId)
+  if (idx === -1) return null
+  projects[idx].invoices = [...(projects[idx].invoices ?? []), { ...data, created_at: new Date().toISOString() }]
+  await kvSet('projects', projects)
+  return projects[idx]
+}
+
+export async function updateInvoice(projectId: string, data: object) {
+  const projects = await getProjects()
+  const idx = projects.findIndex((p: any) => p.id === projectId)
+  if (idx === -1) return null
+  const invIdx = (projects[idx].invoices ?? []).findIndex((i: any) => i.id === (data as any).id)
+  if (invIdx !== -1) {
+    projects[idx].invoices[invIdx] = { ...projects[idx].invoices[invIdx], ...data }
+  }
+  await kvSet('projects', projects)
+  return projects[idx]
+}
+
+// ── Clients ───────────────────────────────────────────────────────────────────
+
 export async function getClients() {
-  return (await call('clients')) ?? CLIENTS
+  return kvGet<any>('clients')
 }
 
 export async function createClient(data: object) {
-  return call('clients', 'POST', data)
+  const clients = await getClients()
+  const client = { created_at: new Date().toISOString(), ...data }
+  clients.push(client)
+  await kvSet('clients', clients)
+  return client
 }
 
+// ── Bid documents & timeline ───────────────────────────────────────────────────
+
 export async function addBidDocument(bidId: string, data: object) {
-  return call(`bids/${bidId}/documents`, 'POST', data)
+  const bids = await getBids()
+  const idx = bids.findIndex((b: any) => b.id === bidId)
+  if (idx === -1) return null
+  bids[idx].documents = [...(bids[idx].documents ?? []), data]
+  await kvSet('bids', bids)
+  return bids[idx]
 }
 
 export async function addBidTimeline(bidId: string, data: object) {
-  return call(`bids/${bidId}/timeline`, 'POST', data)
+  const bids = await getBids()
+  const idx = bids.findIndex((b: any) => b.id === bidId)
+  if (idx === -1) return null
+  bids[idx].timeline = [...(bids[idx].timeline ?? []), data]
+  await kvSet('bids', bids)
+  return bids[idx]
 }
-
-// Generic call (for API routes that need direct path access)
-export { call as sheetsCall }

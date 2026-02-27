@@ -9,7 +9,7 @@ import EstimateStatusButton from "@/components/EstimateStatusButton"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 type BidStage = 'invited' | 'estimating' | 'submitted' | 'decision'
 const STAGE_ORDER: BidStage[] = ['invited','estimating','submitted','decision']

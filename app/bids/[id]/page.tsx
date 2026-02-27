@@ -35,7 +35,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.5rem" }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.4rem" }}>
+          <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.4rem" }}>
             {bid.project_name}
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -44,7 +44,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
         <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5rem" }}>
-          <p style={{ fontSize: "1.35rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          <p className="kpi-value" style={{ fontSize: "1.35rem", letterSpacing: "-0.03em", color: "var(--ink)" }}>
             {formatCurrency(bid.bid_value)}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>

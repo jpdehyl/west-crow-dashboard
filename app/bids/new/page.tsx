@@ -6,8 +6,8 @@ import Link from "next/link"
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.55rem 0.85rem",
-  background: "var(--bg)",
-  border: "1px solid var(--border)",
+  background: "#ffffff",
+  border: "1px solid #d9ccba",
   borderRadius: "8px",
   fontSize: "14px",
   color: "var(--ink)",
@@ -79,7 +79,7 @@ export default function NewBidPage() {
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
           West Crow Contracting
         </p>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+        <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
           New Bid
         </h1>
       </div>
@@ -207,8 +207,8 @@ export default function NewBidPage() {
             disabled={loading}
             style={{
               padding: "0.65rem 1.75rem",
-              background: loading ? "var(--ink-faint)" : "var(--ink)",
-              color: "var(--bg)",
+              background: loading ? "var(--ink-faint)" : "var(--terra)",
+              color: "#ffffff",
               borderRadius: "8px",
               fontSize: "13px",
               fontWeight: 500,

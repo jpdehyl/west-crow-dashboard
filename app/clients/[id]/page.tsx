@@ -34,7 +34,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>
             {client.type} client
           </p>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.5rem" }}>
+          <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)", marginBottom: "0.5rem" }}>
             {client.name}
           </h1>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
@@ -79,7 +79,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
         ].map(({ label, value, sub }) => (
           <div key={label} style={{ background: "var(--bg)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
-            <p style={{ fontSize: "1.35rem", color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
+            <p className="kpi-value" style={{ fontSize: "1.35rem", color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
             <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.3rem" }}>{sub}</p>
           </div>
         ))}

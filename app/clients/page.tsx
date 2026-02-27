@@ -10,7 +10,7 @@ export default function ClientsPage() {
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
           {CLIENTS.length} clients
         </p>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+        <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
           Clients
         </h1>
       </div>
@@ -61,7 +61,7 @@ export default function ClientsPage() {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "1.5rem" }}>
                   {totalWon > 0 && (
-                    <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                    <p className="kpi-value" style={{ fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>
                       {formatCurrency(totalWon)}
                     </p>
                   )}

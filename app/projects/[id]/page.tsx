@@ -12,8 +12,8 @@ const WEATHER_ICON: Record<string, string> = {
   Clear: "☀", Overcast: "☁", Rain: "🌧", Snow: "❄", Fog: "🌫",
 }
 const COST_COLOR: Record<string, string> = {
-  labour: "#3b6fa0", materials: "#b8860b", equipment: "#7a5a8a",
-  subcontractor: "#3d8c5c", other: "#a3a3a3",
+  labour: "#3b6fa0", materials: "#c4963a", equipment: "#7a5a8a",
+  subcontractor: "#5a7a5a", other: "#7f7566",
 }
 
 function SectionMarker({ n, title, date }: { n: string; title: string; date?: string }) {
@@ -115,7 +115,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>
               {project.client} · {project.estimator}{project.superintendent && ` · Oscar (super)`}
             </p>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1, marginBottom: "0.5rem" }}>
+            <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1.1, marginBottom: "0.5rem" }}>
               {project.project_name}
             </h1>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
@@ -135,7 +135,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <p style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)" }}>{formatCurrency(project.contract_value)}</p>
+            <p className="kpi-value" style={{ fontSize: "1.5rem", letterSpacing: "-0.02em", color: "var(--ink)" }}>{formatCurrency(project.contract_value)}</p>
             <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.2rem" }}>contract value</p>
           </div>
         </div>

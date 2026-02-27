@@ -13,7 +13,7 @@ export default async function ProjectsPage() {
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
           {PROJECTS.length} active project{PROJECTS.length !== 1 ? "s" : ""}
         </p>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>Projects</h1>
+        <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>Projects</h1>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -41,12 +41,12 @@ export default async function ProjectsPage() {
                     <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.3rem" }}>
                       {project.client}
                     </p>
-                    <h2 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                    <h2 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.02em" }}>
                       {project.project_name}
                     </h2>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                    <p className="kpi-value" style={{ fontSize: "1.2rem", color: "var(--ink)", letterSpacing: "-0.02em" }}>
                       {formatCurrency(project.contract_value)}
                     </p>
                     {notStarted ? (

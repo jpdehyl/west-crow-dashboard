@@ -137,7 +137,7 @@ export default function DashboardPage() {
           display: "flex", flexDirection: "column", gap: "0.5rem",
         }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500 }}>Total Revenue</p>
-          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>
+          <p className="kpi-value" style={{ fontSize: "1.75rem", letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>
             {totalRevenueKpi != null ? formatCurrency(totalRevenueKpi) : "—"}
           </p>
           <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>from jobs ledger</p>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
           border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
         }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Average GP%</p>
-          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{averageGpKpi != null ? `${Math.round(averageGpKpi * 10) / 10}%` : "—"}</p>
+          <p className="kpi-value" style={{ fontSize: "1.75rem", letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{averageGpKpi != null ? `${Math.round(averageGpKpi * 10) / 10}%` : "—"}</p>
           <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>across parsed financials</p>
         </div>
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
           border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
         }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Top Client</p>
-          <p style={{ fontSize: "1.35rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{topClientKpi?.client ?? "—"}</p>
+          <p className="kpi-value" style={{ fontSize: "1.35rem", letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{topClientKpi?.client ?? "—"}</p>
           <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>{topClientKpi?.revenue != null ? formatCurrency(topClientKpi.revenue) : "no revenue data"}</p>
         </div>
 
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           <WinRateArc pct={winRate} />
           <div>
             <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Win Rate</p>
-            <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{winRate}%</p>
+            <p className="kpi-value" style={{ fontSize: "1.75rem", letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{winRate}%</p>
             <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>{won.length}/{decided.length} decided</p>
           </div>
         </div>

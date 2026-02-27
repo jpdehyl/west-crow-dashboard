@@ -23,7 +23,7 @@ export function MobileHeader() {
         <div style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.1rem", color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Contracting</div>
       </div>
       <Link href="/bids/new" style={{
-        padding: "0.5rem 1rem", background: "var(--ink)", color: "var(--bg)",
+        padding: "0.5rem 1rem", background: "var(--terra)", color: "#ffffff",
         borderRadius: "7px", fontSize: "12px", fontWeight: 500, textDecoration: "none",
       }}>
         + Bid

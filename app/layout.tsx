@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import { DM_Sans } from "next/font/google"
+import { DM_Sans, DM_Serif_Display } from "next/font/google"
 import "./globals.css"
 import Sidebar from "@/components/Sidebar"
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav"
 import AuthProvider from "@/components/AuthProvider"
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans", weight: ["300","400","500","600"] })
+const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-serif", weight: ["400"] })
 
 export const metadata: Metadata = {
   title: "West Crow",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={dmSans.variable}
+      <body className={`${dmSans.variable} ${dmSerif.variable}`}
         style={{ fontFamily: "var(--font-sans), sans-serif" }}>
         <AuthProvider>
           <div style={{ display: "flex", minHeight: "100vh" }}>

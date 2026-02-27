@@ -136,6 +136,8 @@ export default async function AnalyticsPage() {
   return (
     <div style={{ maxWidth: "960px" }}>
 
+      {/* 🚩 JP CALL NEEDED: analytics page fate — assess if this duplicates dashboard value or earns its keep */}
+
       {/* Header */}
       <div style={{ marginBottom: "2.5rem" }}>
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>

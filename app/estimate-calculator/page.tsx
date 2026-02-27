@@ -180,7 +180,7 @@ export default function EstimateCalculatorPage() {
         <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#7f7566", fontWeight: 600, marginBottom: "0.45rem" }}>
           West Crow Contracting · Real-Time Pricing
         </p>
-        <h1 style={{ fontSize: "1.6rem", fontWeight: 500, color: "#1a1a1a", letterSpacing: "-0.03em" }}>Estimate Calculator</h1>
+        <h1 className="font-serif" style={{ fontSize: "1.6rem", fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.03em" }}>Estimate Calculator</h1>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr", gap: "1rem", alignItems: "start" }}>

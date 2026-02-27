@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <h1 style={{ fontSize: "1.75rem", fontWeight: 600, marginBottom: "0.25rem" }}>Settings</h1>
+      <h1 className="font-serif" style={{ fontSize: "1.75rem", fontWeight: 400, marginBottom: "0.25rem" }}>Settings</h1>
       <p style={{ color: "var(--ink-muted)", fontSize: "0.9rem", marginBottom: "2.5rem" }}>
         Manage your company profile, team, security, and integrations.
       </p>
@@ -363,7 +363,7 @@ const tdStyle: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "0.45rem 1rem",
-  background: "var(--accent)",
+  background: "var(--terra)",
   color: "#fff",
   border: "none",
   borderRadius: 6,

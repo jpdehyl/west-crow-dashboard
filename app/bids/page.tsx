@@ -104,7 +104,7 @@ export default function PipelinePage() {
           <p style={{ fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>
             {loading ? "Loading…" : `${bids.length} bids · ${formatCurrency(pipeline)} in pipeline`}
           </p>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             Pipeline
           </h1>
         </div>
@@ -142,7 +142,7 @@ export default function PipelinePage() {
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "white" : STATUS_COLOR[key], display: "inline-block" }} />
                 <span style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: isActive ? "rgba(255,255,255,0.7)" : "var(--ink-faint)", fontWeight: 500 }}>{label}</span>
               </div>
-              <p style={{ fontSize: "1.5rem", fontWeight: 600, color: isActive ? "white" : "var(--ink)", letterSpacing: "-0.02em" }}>
+              <p className="kpi-value" style={{ fontSize: "1.5rem", color: isActive ? "white" : "var(--ink)", letterSpacing: "-0.02em" }}>
                 {loading ? "—" : count}
               </p>
               {val > 0 && <p style={{ fontSize: "11px", color: isActive ? "rgba(255,255,255,0.6)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{formatCurrency(val)}</p>}

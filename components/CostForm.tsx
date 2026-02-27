@@ -6,7 +6,7 @@ const today = () => new Date().toISOString().split('T')[0]
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "0.6rem 0.85rem",
-  background: "var(--bg)", border: "1px solid var(--border)",
+  background: "#ffffff", border: "1px solid #d9ccba",
   borderRadius: "7px", fontSize: "13px", color: "var(--ink)",
   outline: "none", fontFamily: "inherit", boxSizing: "border-box",
 }

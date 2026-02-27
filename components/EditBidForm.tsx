@@ -17,8 +17,8 @@ interface Bid {
 
 const input: React.CSSProperties = {
   width: "100%", padding: "0.55rem 0.75rem",
-  border: "1px solid var(--border)", borderRadius: "7px",
-  fontSize: "13px", color: "var(--ink)", background: "var(--bg)",
+  border: "1px solid #d9ccba", borderRadius: "7px",
+  fontSize: "13px", color: "var(--ink)", background: "#ffffff",
   fontFamily: "inherit", outline: "none",
 }
 

@@ -82,6 +82,8 @@ body {
 .kpi-grid-2  { display: grid; grid-template-columns: repeat(2, 1fr); }
 .stage-strip { display: flex; }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.clients-card-grid { grid-template-columns: 1fr 1fr; }
+
 
 @media (max-width: 768px) {
   .sidebar        { display: none !important; }
@@ -102,6 +104,7 @@ body {
   .stage-strip > * { min-width: 100px; flex-shrink: 0; }
 
   .board-grid { grid-template-columns: 1fr !important; }
+  .clients-card-grid { grid-template-columns: 1fr !important; }
 
   .table-scroll th,
   .table-scroll td { padding: 0.6rem 0.75rem !important; font-size: 13px !important; }

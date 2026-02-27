@@ -30,6 +30,7 @@ export default function NewBidPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [clients, setClients] = useState<any[]>([])
+  const today = new Date().toISOString().split("T")[0]
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : [])).catch(() => {})
@@ -40,8 +41,8 @@ export default function NewBidPage() {
     setLoading(true)
     const fd = new FormData(e.currentTarget)
     try {
-      const clientId  = fd.get('client_id') as string
-      const clientObj = clients.find((c: any) => c.id === clientId)
+      const clientId = fd.get("client_id") as string
+      const clientObj = clients.find((c: any) => String(c.id) === String(clientId))
       const res = await fetch('/api/bids', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +106,19 @@ export default function NewBidPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "1rem 1.25rem", gap: "1.25rem", borderBottom: "1px solid var(--border)" }}>
             <div>
               <label style={labelStyle}>Client <span style={{ color: "var(--accent)" }}>*</span></label>
-              <select required name="client_id" style={{ ...inputStyle, cursor: "pointer" }}>
+              <select
+                required
+                name="client_id"
+                style={{
+                  border: "1px solid #d9ccba",
+                  borderRadius: "8px",
+                  padding: "0.5rem 0.75rem",
+                  fontSize: "13px",
+                  background: "#fff",
+                  width: "100%",
+                  cursor: "pointer",
+                }}
+              >
                 <option value="">Select client…</option>
                 {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -127,7 +140,7 @@ export default function NewBidPage() {
                 name="bid_value"
                 type="number"
                 min="0"
-                step="500"
+                step="100"
                 placeholder="150000"
                 style={inputStyle}
               />
@@ -138,7 +151,8 @@ export default function NewBidPage() {
                 required
                 name="deadline"
                 type="date"
-                style={inputStyle}
+                min={today}
+                style={{ ...inputStyle, border: "1px solid #d9ccba", borderRadius: "8px", padding: "0.5rem 0.75rem" }}
               />
             </div>
           </div>

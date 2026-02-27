@@ -8,29 +8,29 @@ type SheetRows = { name: string; rows: Cell[][] }
 
 type RevenueRow = { client: string; revenue: number }
 
+type ProductionJob = { sheet: string; client: string; address: string; contract_price: number }
+
 type Financials = {
   generated_at: string
-  sources: {
-    jobs_report: string
-    client_list: string
-    production_report: string
-    parser: string
-  }
   totals: {
-    total_revenue: number | null
-    total_cost: number | null
-    gross_profit: number | null
-    gross_margin_pct: number | null
-    job_count: number | null
+    total_revenue: number
+    total_cost: number
+    gross_profit: number
+    gross_margin_pct: number
+    job_count: number
   }
   clients: {
     revenue_by_client: RevenueRow[]
     top_10_clients: RevenueRow[]
     top_client: RevenueRow | null
   }
+  production: {
+    jobs: ProductionJob[]
+    total_production_revenue: number
+  }
   kpis: {
-    total_revenue: number | null
-    average_gp_pct: number | null
+    total_revenue: number
+    average_gp_pct: number
     top_client_by_revenue: RevenueRow | null
   }
 }
@@ -40,49 +40,21 @@ const CLIENTS_PATH = "/tmp/client_list_2024.xlsx"
 const PRODUCTION_PATH = "/tmp/wcc_production.xlsx"
 const OUT_PATH = resolve(process.cwd(), "data/financials.json")
 
-function toNumber(value: Cell): number | null {
+function n(value: Cell): number {
   if (typeof value === "number" && Number.isFinite(value)) return value
-  if (typeof value !== "string") return null
-  const cleaned = value.replace(/[$,%\s,()]/g, "").trim()
-  if (!cleaned) return null
-  const negative = value.includes("(") && value.includes(")")
+  if (typeof value !== "string") return 0
+  const trimmed = value.trim()
+  if (!trimmed) return 0
+  const neg = trimmed.startsWith("(") && trimmed.endsWith(")")
+  const cleaned = trimmed.replace(/[$,%\s,()]/g, "")
   const parsed = Number(cleaned)
-  if (!Number.isFinite(parsed)) return null
-  return negative ? -parsed : parsed
+  if (!Number.isFinite(parsed)) return 0
+  return neg ? -parsed : parsed
 }
 
-function toText(value: Cell): string {
+function t(value: Cell): string {
   if (value == null) return ""
-  return String(value).trim()
-}
-
-function isEmptyRow(row: Cell[]): boolean {
-  return row.every((cell) => toText(cell) === "")
-}
-
-function normalizeHeader(row: Cell[]): string[] {
-  return row.map((v) => toText(v).toLowerCase())
-}
-
-function hasToken(header: string, tokens: string[]): boolean {
-  return tokens.some((t) => header.includes(t))
-}
-
-function pickHeaderRow(rows: Cell[][], requiredTokens: string[][]): { index: number; headers: string[] } | null {
-  let best: { index: number; score: number; headers: string[] } | null = null
-
-  rows.slice(0, 40).forEach((row, idx) => {
-    const headers = normalizeHeader(row)
-    const score = requiredTokens.reduce((sum, tokenGroup) => {
-      return sum + (headers.some((h) => hasToken(h, tokenGroup)) ? 1 : 0)
-    }, 0)
-
-    if (score > 0 && (!best || score > best.score)) {
-      best = { index: idx, score, headers }
-    }
-  })
-
-  return best ? { index: best.index, headers: best.headers } : null
+  return String(value)
 }
 
 async function tryReadWithXlsx(filePath: string): Promise<SheetRows[] | null> {
@@ -91,8 +63,7 @@ async function tryReadWithXlsx(filePath: string): Promise<SheetRows[] | null> {
     const xlsx = (xlsxModule as { default?: typeof import("xlsx") } & typeof import("xlsx")).default ?? xlsxModule
     const workbook = xlsx.readFile(filePath)
     return workbook.SheetNames.map((name) => {
-      const sheet = workbook.Sheets[name]
-      const rows = xlsx.utils.sheet_to_json<Cell[]>(sheet, { header: 1, raw: true, defval: null })
+      const rows = xlsx.utils.sheet_to_json<Cell[]>(workbook.Sheets[name], { header: 1, raw: true, defval: null })
       return { name, rows }
     })
   } catch {
@@ -115,13 +86,11 @@ if not path.exists():
 
 NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-    "rel": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
     "pkgrel": "http://schemas.openxmlformats.org/package/2006/relationships",
 }
 
-
 def col_index(ref: str) -> int:
-    m = re.match(r"([A-Z]+)", ref)
+    m = re.match(r"([A-Z]+)", ref or "A1")
     if not m:
         return 0
     col = m.group(1)
@@ -135,10 +104,7 @@ with zipfile.ZipFile(path, "r") as zf:
     if "xl/sharedStrings.xml" in zf.namelist():
         root = ET.fromstring(zf.read("xl/sharedStrings.xml"))
         for si in root.findall("main:si", NS):
-            pieces = []
-            for t in si.findall(".//main:t", NS):
-                pieces.append(t.text or "")
-            shared.append("".join(pieces))
+            shared.append("".join((n.text or "") for n in si.findall(".//main:t", NS)))
 
     wb = ET.fromstring(zf.read("xl/workbook.xml"))
     rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
@@ -156,10 +122,11 @@ with zipfile.ZipFile(path, "r") as zf:
         target = rel_map.get(rid, "")
         if not target:
             continue
-        sheet_path = "xl/" + target
-        if sheet_path not in zf.namelist():
+        p = "xl/" + target
+        if p not in zf.namelist():
             continue
-        root = ET.fromstring(zf.read(sheet_path))
+
+        root = ET.fromstring(zf.read(p))
         rows = []
         for row in root.findall("main:sheetData/main:row", NS):
             vals = []
@@ -170,26 +137,27 @@ with zipfile.ZipFile(path, "r") as zf:
                 ctype = c.attrib.get("t")
                 val = None
                 if ctype == "inlineStr":
-                    t = c.find("main:is/main:t", NS)
-                    val = t.text if t is not None else None
+                    node = c.find("main:is/main:t", NS)
+                    val = node.text if node is not None else None
                 else:
-                    v = c.find("main:v", NS)
-                    text = v.text if v is not None else None
-                    if text is None:
+                    node = c.find("main:v", NS)
+                    txt = node.text if node is not None else None
+                    if txt is None:
                         val = None
                     elif ctype == "s":
                         try:
-                            val = shared[int(text)]
+                            val = shared[int(txt)]
                         except Exception:
-                            val = text
+                            val = txt
                     else:
                         try:
-                            n = float(text)
-                            val = int(n) if n.is_integer() else n
+                            num = float(txt)
+                            val = int(num) if num.is_integer() else num
                         except Exception:
-                            val = text
+                            val = txt
                 vals[idx] = val
             rows.append(vals)
+
         out.append({"name": name, "rows": rows})
 
     print(json.dumps(out))
@@ -197,9 +165,8 @@ with zipfile.ZipFile(path, "r") as zf:
 
   const proc = spawnSync("python", ["-c", script], { encoding: "utf8" })
   if (proc.status !== 0) {
-    throw new Error(proc.stderr || "Failed to parse workbook with python fallback")
+    throw new Error(proc.stderr || "python fallback failed")
   }
-
   const parsed = JSON.parse(proc.stdout || "[]") as SheetRows[]
   return Array.isArray(parsed) ? parsed : []
 }
@@ -210,99 +177,107 @@ async function readWorkbook(filePath: string): Promise<SheetRows[]> {
   return readWithPythonFallback(filePath)
 }
 
-function aggregateJobsMetrics(sheets: SheetRows[]): { revenue: number | null; cost: number | null; grossProfit: number | null; jobCount: number | null } {
-  const rows = sheets.flatMap((s) => s.rows)
-  const headerMeta = pickHeaderRow(rows, [["revenue", "income", "contract"], ["cost", "expense"], ["job", "project"]])
-  if (!headerMeta) return { revenue: null, cost: null, grossProfit: null, jobCount: null }
+function parseJobsReport(sheets: SheetRows[]) {
+  console.log("[jobs_report] parsing /tmp/jobs_report.xlsx")
+  const sheet = sheets.find((s) => s.name === "Sheet1") ?? sheets[0]
+  if (!sheet) return { totalRevenue: 0, totalCost: 0, grossProfit: 0, grossMarginPct: 0, jobCount: 0 }
 
-  const headers = headerMeta.headers
-  const revenueIdx = headers.findIndex((h) => hasToken(h, ["revenue", "income", "contract"]))
-  const costIdx = headers.findIndex((h) => hasToken(h, ["cost", "expense"]))
-  const gpIdx = headers.findIndex((h) => hasToken(h, ["gross profit", "gp", "margin"]))
-  const jobIdx = headers.findIndex((h) => hasToken(h, ["job", "project", "name"]))
-
-  let revenue = 0
-  let cost = 0
-  let gp = 0
-  let hasRevenue = false
-  let hasCost = false
-  let hasGp = false
+  console.log(`[jobs_report] sheet: ${sheet.name}, rows: ${sheet.rows.length}`)
+  // Row 1 header, data starts row 2
+  const dataRows = sheet.rows.slice(1)
+  let totalRevenue = 0
+  let totalCost = 0
   let jobCount = 0
 
-  for (const row of rows.slice(headerMeta.index + 1)) {
-    if (isEmptyRow(row)) continue
-    const rev = revenueIdx >= 0 ? toNumber(row[revenueIdx] ?? null) : null
-    const cst = costIdx >= 0 ? toNumber(row[costIdx] ?? null) : null
-    const gpv = gpIdx >= 0 ? toNumber(row[gpIdx] ?? null) : null
-    const jobName = jobIdx >= 0 ? toText(row[jobIdx] ?? null) : ""
+  for (const row of dataRows) {
+    const revenue = n(row[3] ?? null) // col D
+    const labourCost = n(row[5] ?? null) // col F
+    const disposalCost = n(row[6] ?? null) // col G
+    const suppliesCost = n(row[7] ?? null) // col H
+    const rowCost = labourCost + disposalCost + suppliesCost
+    const hasAny = revenue !== 0 || labourCost !== 0 || disposalCost !== 0 || suppliesCost !== 0
+    if (!hasAny) continue
 
-    if (rev != null) {
-      revenue += rev
-      hasRevenue = true
-    }
-    if (cst != null) {
-      cost += cst
-      hasCost = true
-    }
-    if (gpv != null) {
-      gp += gpv
-      hasGp = true
-    }
-
-    if (jobName || rev != null || cst != null || gpv != null) {
-      jobCount += 1
-    }
+    totalRevenue += revenue
+    totalCost += rowCost
+    jobCount += 1
   }
 
-  return {
-    revenue: hasRevenue ? revenue : null,
-    cost: hasCost ? cost : null,
-    grossProfit: hasGp ? gp : null,
-    jobCount: jobCount > 0 ? jobCount : null,
-  }
+  const grossProfit = totalRevenue - totalCost
+  const grossMarginPct = totalRevenue !== 0 ? (grossProfit / totalRevenue) * 100 : 0
+
+  console.log(`[jobs_report] revenue=${totalRevenue.toFixed(2)} cost=${totalCost.toFixed(2)} gp%=${grossMarginPct.toFixed(2)} jobs=${jobCount}`)
+
+  return { totalRevenue, totalCost, grossProfit, grossMarginPct, jobCount }
 }
 
-function aggregateClientRevenue(sheets: SheetRows[]): RevenueRow[] {
-  const rows = sheets.flatMap((s) => s.rows)
-  const headerMeta = pickHeaderRow(rows, [["client", "customer", "gc"], ["revenue", "sales", "amount"]])
-  if (!headerMeta) return []
+function parseClientList(sheets: SheetRows[]) {
+  console.log("[client_list] parsing /tmp/client_list_2024.xlsx")
+  const sheet = sheets.find((s) => s.name.trim().toLowerCase() === "sales by customer 2024") ?? sheets[0]
+  if (!sheet) return { revenueByClient: [] as RevenueRow[], top10: [] as RevenueRow[], topClient: null as RevenueRow | null }
 
-  const headers = headerMeta.headers
-  const clientIdx = headers.findIndex((h) => hasToken(h, ["client", "customer", "gc", "name"]))
-  const revenueIdx = headers.findIndex((h) => hasToken(h, ["revenue", "sales", "amount", "total"]))
-  if (clientIdx < 0 || revenueIdx < 0) return []
-
+  console.log(`[client_list] sheet: ${sheet.name}, rows: ${sheet.rows.length}`)
+  // Row 5 has headers => index 4
+  const rows = sheet.rows.slice(5)
   const map = new Map<string, number>()
-  for (const row of rows.slice(headerMeta.index + 1)) {
-    const client = toText(row[clientIdx] ?? null)
-    const revenue = toNumber(row[revenueIdx] ?? null)
-    if (!client || revenue == null) continue
-    map.set(client, (map.get(client) ?? 0) + revenue)
+  let currentClient = ""
+
+  for (const row of rows) {
+    const colA = t(row[0] ?? null)
+    const colD = n(row[3] ?? null)
+    if (!colA.trim()) continue
+
+    const isJobLine = /^\s+/.test(colA)
+    if (!isJobLine) {
+      currentClient = colA.trim()
+      if (!map.has(currentClient)) map.set(currentClient, 0)
+      continue
+    }
+
+    if (currentClient) {
+      map.set(currentClient, (map.get(currentClient) ?? 0) + colD)
+    }
   }
 
-  return [...map.entries()]
+  const revenueByClient = [...map.entries()]
     .map(([client, revenue]) => ({ client, revenue }))
     .sort((a, b) => b.revenue - a.revenue)
+
+  const top10 = revenueByClient.slice(0, 10)
+  const topClient = top10[0] ?? null
+  console.log(`[client_list] clients=${revenueByClient.length} top=${topClient?.client ?? "none"}`)
+
+  return { revenueByClient, top10, topClient }
 }
 
-function averageGpFromProduction(sheets: SheetRows[]): number | null {
-  const rows = sheets.flatMap((s) => s.rows)
-  const headerMeta = pickHeaderRow(rows, [["gp", "margin", "gross"], ["actual", "target", "%"]])
-  if (!headerMeta) return null
+function parseProduction(sheets: SheetRows[]) {
+  console.log("[production] parsing /tmp/wcc_production.xlsx")
+  const jobs: ProductionJob[] = []
 
-  const headers = headerMeta.headers
-  const gpIdx = headers.findIndex((h) => hasToken(h, ["gp %", "gross margin", "actual gp", "margin %", "gp"]))
-  if (gpIdx < 0) return null
+  for (const sheet of sheets) {
+    const row2 = sheet.rows[1] ?? []
+    const row3 = sheet.rows[2] ?? []
 
-  const vals: number[] = []
-  for (const row of rows.slice(headerMeta.index + 1)) {
-    const n = toNumber(row[gpIdx] ?? null)
-    if (n == null) continue
-    vals.push(Math.abs(n) > 1 ? n : n * 100)
+    const address = t(row2[2] ?? null).trim() // row 2 col C
+    const client = t(row3[2] ?? null).trim() // row 3 col C
+    const contractPrice = n(row3[7] ?? null) // row 3 col H (label is G, value is H)
+
+    console.log(`[production] sheet=${sheet.name} client=${client || "(blank)"} contract=${contractPrice}`)
+
+    if (contractPrice <= 0) continue
+
+    jobs.push({
+      sheet: sheet.name,
+      client,
+      address,
+      contract_price: contractPrice,
+    })
   }
 
-  if (vals.length === 0) return null
-  return vals.reduce((a, b) => a + b, 0) / vals.length
+  const totalProductionRevenue = jobs.reduce((sum, j) => sum + j.contract_price, 0)
+  console.log(`[production] jobs=${jobs.length} total=${totalProductionRevenue.toFixed(2)}`)
+
+  return { jobs, totalProductionRevenue }
 }
 
 async function main() {
@@ -310,46 +285,43 @@ async function main() {
   const clientsSheets = await readWorkbook(CLIENTS_PATH)
   const productionSheets = await readWorkbook(PRODUCTION_PATH)
 
-  const jobs = aggregateJobsMetrics(jobsSheets)
-  const revenueByClient = aggregateClientRevenue(clientsSheets)
-  const top10 = revenueByClient.slice(0, 10)
-  const topClient = top10[0] ?? null
-
-  const totalRevenue = jobs.revenue
-  const totalCost = jobs.cost
-  const grossProfit = jobs.grossProfit ?? (jobs.revenue != null && jobs.cost != null ? jobs.revenue - jobs.cost : null)
-  const grossMarginPct =
-    totalRevenue != null && totalRevenue !== 0 && grossProfit != null ? (grossProfit / totalRevenue) * 100 : averageGpFromProduction(productionSheets)
+  const jobsData = parseJobsReport(jobsSheets)
+  const clientData = parseClientList(clientsSheets)
+  const productionData = parseProduction(productionSheets)
 
   const output: Financials = {
     generated_at: new Date().toISOString(),
-    sources: {
-      jobs_report: JOBS_PATH,
-      client_list: CLIENTS_PATH,
-      production_report: PRODUCTION_PATH,
-      parser: "scripts/parse-financials.ts",
-    },
     totals: {
-      total_revenue: totalRevenue,
-      total_cost: totalCost,
-      gross_profit: grossProfit,
-      gross_margin_pct: grossMarginPct,
-      job_count: jobs.jobCount,
+      total_revenue: jobsData.totalRevenue,
+      total_cost: jobsData.totalCost,
+      gross_profit: jobsData.grossProfit,
+      gross_margin_pct: jobsData.grossMarginPct,
+      job_count: jobsData.jobCount,
     },
     clients: {
-      revenue_by_client: revenueByClient,
-      top_10_clients: top10,
-      top_client: topClient,
+      revenue_by_client: clientData.revenueByClient,
+      top_10_clients: clientData.top10,
+      top_client: clientData.topClient,
+    },
+    production: {
+      jobs: productionData.jobs,
+      total_production_revenue: productionData.totalProductionRevenue,
     },
     kpis: {
-      total_revenue: totalRevenue,
-      average_gp_pct: grossMarginPct,
-      top_client_by_revenue: topClient,
+      total_revenue: jobsData.totalRevenue,
+      average_gp_pct: jobsData.grossMarginPct,
+      top_client_by_revenue: clientData.topClient,
     },
   }
 
   mkdirSync(resolve(process.cwd(), "data"), { recursive: true })
   writeFileSync(OUT_PATH, JSON.stringify(output, null, 2), "utf8")
+
+  console.log("\n=== Financials Summary ===")
+  console.log(`Total Revenue: ${jobsData.totalRevenue.toFixed(2)}`)
+  console.log(`GP%: ${jobsData.grossMarginPct.toFixed(2)}%`)
+  console.log(`Top Client: ${clientData.topClient ? `${clientData.topClient.client} (${clientData.topClient.revenue.toFixed(2)})` : "None"}`)
+  console.log(`Job Count: ${jobsData.jobCount}`)
   console.log(`Wrote ${OUT_PATH}`)
 }
 

@@ -15,11 +15,13 @@ async function call(path: string, method = 'GET', body?: object) {
     if (method !== 'GET' && method !== 'POST') {
       url.searchParams.set('method', method)
     }
+    const isWrite = method !== 'GET'
     const res = await fetch(url.toString(), {
       method: method === 'GET' ? 'GET' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
-      cache: 'no-store',
+      next: { revalidate: isWrite ? 0 : 60 },
+      cache: isWrite ? 'no-store' : undefined,
       redirect: 'follow',
     })
     if (!res.ok) return null

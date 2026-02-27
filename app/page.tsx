@@ -44,6 +44,9 @@ type FinancialAnalytics = {
     average_gp_pct?: number | null
     top_client_by_revenue?: RevenueClient | null
   }
+  clients?: {
+    top_10_clients?: RevenueClient[]
+  }
 }
 
 export default function DashboardPage() {
@@ -102,6 +105,14 @@ export default function DashboardPage() {
   const totalRevenueKpi = financials?.kpis?.total_revenue ?? null
   const averageGpKpi = financials?.kpis?.average_gp_pct ?? null
   const topClientKpi = financials?.kpis?.top_client_by_revenue ?? null
+  const statusGroups = ["active", "sent", "won", "lost", "no-bid"].map((s) => ({
+    label: s === "no-bid" ? "No Bid" : s.charAt(0).toUpperCase() + s.slice(1),
+    count: bids.filter((b) => b.status === s).length,
+    value: bids.filter((b) => b.status === s).reduce((sum, b) => sum + (b.bid_value || 0), 0),
+    color: { active: "var(--accent)", sent: "var(--gold)", won: "var(--sage)", lost: "var(--terra)", "no-bid": "var(--ink-faint)" }[s],
+  }))
+  const topClients = (financials?.clients?.top_10_clients ?? []).slice(0, 8)
+  const maxRev = Math.max(...topClients.map((c) => c.revenue), 1)
 
   return (
     <div>
@@ -239,6 +250,67 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <div style={{ marginTop: "1.5rem" }}>
+        <section style={{ marginBottom: "1rem" }}>
+          <h2 style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-faint)", fontWeight: 600, marginBottom: "0.75rem" }}>
+            Pipeline by Status
+          </h2>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {statusGroups.map((status) => (
+              <div
+                key={status.label}
+                style={{
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "10px",
+                  padding: "0.75rem 1rem",
+                  flex: "1 1 160px",
+                  minWidth: 0,
+                }}
+              >
+                <p style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.35rem" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: status.color, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>{status.label}</span>
+                </p>
+                <p className="kpi-value" style={{ fontSize: "1.4rem", lineHeight: 1, color: "var(--ink)", marginBottom: "0.2rem" }}>{status.count}</p>
+                <p style={{ fontSize: "11px", color: "var(--ink-faint)" }}>{formatCurrency(status.value)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-faint)", fontWeight: 600, marginBottom: "0.75rem" }}>
+            Top Clients by Revenue
+          </h2>
+
+          {!financials && [...Array(6)].map((_, i) => (
+            <div key={i} style={{ height: 28, width: "100%", background: "#f7f2e9", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s ease-in-out infinite" }} />
+          ))}
+
+          {financials && topClients.map((client) => (
+            <div key={client.client} style={{ marginBottom: "0.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem", gap: "0.75rem" }}>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>{client.client}</span>
+                <span className="kpi-value" style={{ fontSize: "1rem", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {formatCurrency(client.revenue)}
+                </span>
+              </div>
+              <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${(client.revenue / maxRev) * 100}%`,
+                    background: "var(--sage)",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </section>
+      </div>
     </div>
   )
 }

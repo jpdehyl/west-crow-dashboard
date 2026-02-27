@@ -1,0 +1,517 @@
+{
+  "generated_at": "2026-02-27T17:23:02.147Z",
+  "totals": {
+    "total_revenue": 17686.65,
+    "total_cost": 9590.849999999999,
+    "gross_profit": 8095.800000000003,
+    "gross_margin_pct": 45.773507136738736,
+    "job_count": 8
+  },
+  "clients": {
+    "revenue_by_client": [
+      {
+        "client": "VPAC Construction Group Ltd.",
+        "revenue": 269194.97000000003
+      },
+      {
+        "client": "Alfred Horie Construction Co. Ltd.",
+        "revenue": 188315.92
+      },
+      {
+        "client": "The Restorers Group Inc.",
+        "revenue": 90476
+      },
+      {
+        "client": "Little Star Renovations",
+        "revenue": 88837.23999999999
+      },
+      {
+        "client": "Baja Construction Canada",
+        "revenue": 85001.07
+      },
+      {
+        "client": "Onni Property Management Services Ltd.",
+        "revenue": 79818.35
+      },
+      {
+        "client": "Holaco Construction Co Ltd.",
+        "revenue": 79017.18
+      },
+      {
+        "client": "Terrafirma Industries Ltd.",
+        "revenue": 63836
+      },
+      {
+        "client": "PR  Pomeroy Restoration & Construction Ltd.",
+        "revenue": 61500
+      },
+      {
+        "client": "Jedan Brothers Contracting Ltd",
+        "revenue": 50726.07
+      },
+      {
+        "client": "Venture Pacific Construction Management",
+        "revenue": 50122
+      },
+      {
+        "client": "Tiki International Inc.",
+        "revenue": 47333.74
+      },
+      {
+        "client": "My House Design/Build Team",
+        "revenue": 46323
+      },
+      {
+        "client": "Grenor Homes",
+        "revenue": 45938.560000000005
+      },
+      {
+        "client": "Willow Spring Construction Ltd.",
+        "revenue": 45423
+      },
+      {
+        "client": "Gregory Clark Contracting Ltd.",
+        "revenue": 39564.1
+      },
+      {
+        "client": "Urban Roots Build Co. Inc.",
+        "revenue": 32336
+      },
+      {
+        "client": "New City Contracting Ltd.",
+        "revenue": 31902
+      },
+      {
+        "client": "Novacom Building Partners",
+        "revenue": 31533.4
+      },
+      {
+        "client": "Twin Lions Contracting Ltd.",
+        "revenue": 30128
+      },
+      {
+        "client": "Lightfoot Construction Ltd.",
+        "revenue": 25930
+      },
+      {
+        "client": "Blue Water Concepts Ltd.",
+        "revenue": 25350
+      },
+      {
+        "client": "Wesgroup Contracting Ltd",
+        "revenue": 23497
+      },
+      {
+        "client": "Century Group Inc.",
+        "revenue": 22281
+      },
+      {
+        "client": "LMS 4023 Strata Corporation",
+        "revenue": 21577
+      },
+      {
+        "client": "Division 2 Contracting Ltd",
+        "revenue": 12438.650000000001
+      },
+      {
+        "client": "Exo Construction Group",
+        "revenue": 11607
+      },
+      {
+        "client": "Toricon Projects Ltd.",
+        "revenue": 9826
+      },
+      {
+        "client": "Cole Nickel",
+        "revenue": 8550
+      },
+      {
+        "client": "DMC Contracting Ltd",
+        "revenue": 6186.5
+      },
+      {
+        "client": "Kander Design Inc.",
+        "revenue": 5824
+      },
+      {
+        "client": "Donoghue Homes",
+        "revenue": 5783.1
+      },
+      {
+        "client": "RSC Renovation Science Corp.",
+        "revenue": 5750
+      },
+      {
+        "client": "Westerly Restoration Ltd.",
+        "revenue": 5498
+      },
+      {
+        "client": "Sayers Contracting",
+        "revenue": 4961
+      },
+      {
+        "client": "RANEWAY General Contracting Ltd",
+        "revenue": 4050
+      },
+      {
+        "client": "NW 524 c/o Stratawest Management Ltd.",
+        "revenue": 3400
+      },
+      {
+        "client": "Dean's Renovations",
+        "revenue": 3333
+      },
+      {
+        "client": "Monarch Floor & Window Coverings",
+        "revenue": 3022
+      },
+      {
+        "client": "S.A.H Disaster Restoration Services Ltd.",
+        "revenue": 3000
+      },
+      {
+        "client": "Spartan Logistics",
+        "revenue": 2946
+      },
+      {
+        "client": "Peak Ventures",
+        "revenue": 2600
+      },
+      {
+        "client": "Rick Ryder",
+        "revenue": 2528.21
+      },
+      {
+        "client": "KFA Homes",
+        "revenue": 2500
+      },
+      {
+        "client": "Montroyal Contracting Ltd.",
+        "revenue": 1804
+      },
+      {
+        "client": "Warren Lever",
+        "revenue": 1798
+      },
+      {
+        "client": "Total Alfred Horie Construction Co. Ltd.",
+        "revenue": 1350
+      },
+      {
+        "client": "Norum Construction and Renovations",
+        "revenue": 505.25
+      },
+      {
+        "client": "Edge Group West Ltd.",
+        "revenue": 250
+      },
+      {
+        "client": "Total Baja Construction Canada",
+        "revenue": 0
+      },
+      {
+        "client": "Total Blue Water Concepts Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Century Group Inc.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Cole Nickel",
+        "revenue": 0
+      },
+      {
+        "client": "Total Dean's Renovations",
+        "revenue": 0
+      },
+      {
+        "client": "Total Division 2 Contracting Ltd",
+        "revenue": 0
+      },
+      {
+        "client": "Total DMC Contracting Ltd",
+        "revenue": 0
+      },
+      {
+        "client": "Total Donoghue Homes",
+        "revenue": 0
+      },
+      {
+        "client": "Total Edge Group West Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Exo Construction Group",
+        "revenue": 0
+      },
+      {
+        "client": "Gareth  Underhill",
+        "revenue": 0
+      },
+      {
+        "client": "Total Gregory Clark Contracting Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Grenor Homes",
+        "revenue": 0
+      },
+      {
+        "client": "Total Holaco Construction Co Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Jedan Brothers Contracting Ltd",
+        "revenue": 0
+      },
+      {
+        "client": "Total Kander Design Inc.",
+        "revenue": 0
+      },
+      {
+        "client": "Total KFA Homes",
+        "revenue": 0
+      },
+      {
+        "client": "Total Lightfoot Construction Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Little Star Renovations",
+        "revenue": 0
+      },
+      {
+        "client": "Total LMS 4023 Strata Corporation",
+        "revenue": 0
+      },
+      {
+        "client": "Total Monarch Floor & Window Coverings",
+        "revenue": 0
+      },
+      {
+        "client": "Total Montroyal Contracting Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total My House Design/Build Team",
+        "revenue": 0
+      },
+      {
+        "client": "Total New City Contracting Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Norum Construction and Renovations",
+        "revenue": 0
+      },
+      {
+        "client": "Total Novacom Building Partners",
+        "revenue": 0
+      },
+      {
+        "client": "Total NW 524 c/o Stratawest Management Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Onni Property Management Services Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Peak Ventures",
+        "revenue": 0
+      },
+      {
+        "client": "Total PR  Pomeroy Restoration & Construction Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total RANEWAY General Contracting Ltd",
+        "revenue": 0
+      },
+      {
+        "client": "Total Rick Ryder",
+        "revenue": 0
+      },
+      {
+        "client": "Total RSC Renovation Science Corp.",
+        "revenue": 0
+      },
+      {
+        "client": "Total S.A.H Disaster Restoration Services Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Sayers Contracting",
+        "revenue": 0
+      },
+      {
+        "client": "Spartan Demolition Inc",
+        "revenue": 0
+      },
+      {
+        "client": "Total Spartan Logistics",
+        "revenue": 0
+      },
+      {
+        "client": "Total Terrafirma Industries Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total The Restorers Group Inc.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Tiki International Inc.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Toricon Projects Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "TQ Construction",
+        "revenue": 0
+      },
+      {
+        "client": "Total TQ Construction",
+        "revenue": 0
+      },
+      {
+        "client": "Total Twin Lions Contracting Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Urban Roots Build Co. Inc.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Venture Pacific Construction Management",
+        "revenue": 0
+      },
+      {
+        "client": "Total VPAC Construction Group Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Warren Lever",
+        "revenue": 0
+      },
+      {
+        "client": "Total Wesgroup Contracting Ltd",
+        "revenue": 0
+      },
+      {
+        "client": "Total Westerly Restoration Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "Total Willow Spring Construction Ltd.",
+        "revenue": 0
+      },
+      {
+        "client": "TOTAL",
+        "revenue": 0
+      },
+      {
+        "client": "Monday, May 27, 2024 10:21:04 p.m. GMT-7 - Accrual Basis",
+        "revenue": 0
+      }
+    ],
+    "top_10_clients": [
+      {
+        "client": "VPAC Construction Group Ltd.",
+        "revenue": 269194.97000000003
+      },
+      {
+        "client": "Alfred Horie Construction Co. Ltd.",
+        "revenue": 188315.92
+      },
+      {
+        "client": "The Restorers Group Inc.",
+        "revenue": 90476
+      },
+      {
+        "client": "Little Star Renovations",
+        "revenue": 88837.23999999999
+      },
+      {
+        "client": "Baja Construction Canada",
+        "revenue": 85001.07
+      },
+      {
+        "client": "Onni Property Management Services Ltd.",
+        "revenue": 79818.35
+      },
+      {
+        "client": "Holaco Construction Co Ltd.",
+        "revenue": 79017.18
+      },
+      {
+        "client": "Terrafirma Industries Ltd.",
+        "revenue": 63836
+      },
+      {
+        "client": "PR  Pomeroy Restoration & Construction Ltd.",
+        "revenue": 61500
+      },
+      {
+        "client": "Jedan Brothers Contracting Ltd",
+        "revenue": 50726.07
+      }
+    ],
+    "top_client": {
+      "client": "VPAC Construction Group Ltd.",
+      "revenue": 269194.97000000003
+    }
+  },
+  "production": {
+    "jobs": [
+      {
+        "sheet": "#404-510 Chesterfield ",
+        "client": "Little Star Renovations",
+        "address": "#404-510 Chesterfield Ave. North Vancouver",
+        "contract_price": 2520
+      },
+      {
+        "sheet": "42-5221 Oakmount St. Vancouver",
+        "client": "Lightfoot",
+        "address": "42-5221 Oakmount St. Vancouver",
+        "contract_price": 1100
+      },
+      {
+        "sheet": "666 Burrard ",
+        "client": "VPAC",
+        "address": "666 Burrard St. Vancouver",
+        "contract_price": 1150
+      },
+      {
+        "sheet": "620 Cardero St. Vancouver",
+        "client": "Lightfoot",
+        "address": "620 Cardero St. Vancouver",
+        "contract_price": 4500
+      },
+      {
+        "sheet": "50-5221 Oakmount Cres. Burnaby",
+        "client": "My House",
+        "address": "5221 Oakmount Cres. Burnaby",
+        "contract_price": 7325
+      },
+      {
+        "sheet": "105-1533 Broadway, Vancouver",
+        "client": "Onni",
+        "address": "105-1533 Broadway, Vancouver",
+        "contract_price": 1800
+      }
+    ],
+    "total_production_revenue": 18395
+  },
+  "kpis": {
+    "total_revenue": 17686.65,
+    "average_gp_pct": 45.773507136738736,
+    "top_client_by_revenue": {
+      "client": "VPAC Construction Group Ltd.",
+      "revenue": 269194.97000000003
+    }
+  }
+}

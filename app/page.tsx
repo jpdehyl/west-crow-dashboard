@@ -85,7 +85,7 @@ export default function DashboardPage() {
 
   const activities: { icon: string; text: string; date: string; href: string }[] = []
   bids.forEach(bid => {
-    ;(bid.timeline ?? []).forEach(ev => {
+    ;(bid.timeline ?? []).forEach((ev: any) => {
       let text = ""
       if (ev.stage === "invited") text = `${bid.project_name} — bid invite received`
       else if (ev.stage === "estimating") text = `${bid.project_name} — estimation started`

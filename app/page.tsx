@@ -1,5 +1,8 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { BIDS, PROJECTS } from "@/lib/data"
-import { formatCurrency, formatDate, daysUntil } from "@/lib/utils"
+import { formatCurrency, daysUntil } from "@/lib/utils"
 import Link from "next/link"
 
 const STATUS: Record<string, { dot: string; label: string }> = {
@@ -17,18 +20,6 @@ function Dot({ status }: { status: string }) {
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
       <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>{s.label}</span>
     </span>
-  )
-}
-
-function MiniBar({ values, colors }: { values: number[]; colors: string[] }) {
-  const total = values.reduce((a, b) => a + b, 0)
-  if (total === 0) return null
-  return (
-    <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "var(--border)", width: "100%" }}>
-      {values.map((v, i) => (
-        <div key={i} style={{ width: `${(v / total) * 100}%`, background: colors[i], minWidth: v > 0 ? 3 : 0 }} />
-      ))}
-    </div>
   )
 }
 
@@ -66,16 +57,29 @@ function relativeDate(d: string): string {
   return `${Math.floor(days / 30)}mo ago`
 }
 
+type RevenueClient = { client: string; revenue: number }
+
+type FinancialAnalytics = {
+  kpis?: {
+    total_revenue?: number | null
+    average_gp_pct?: number | null
+    top_client_by_revenue?: RevenueClient | null
+  }
+}
+
 export default function DashboardPage() {
-  const active  = BIDS.filter(b => b.status === "active")
-  const sent    = BIDS.filter(b => b.status === "sent")
+  const [financials, setFinancials] = useState<FinancialAnalytics | null>(null)
+
+  useEffect(() => {
+    fetch("/api/analytics")
+      .then((r) => r.json())
+      .then((payload: { data?: FinancialAnalytics }) => setFinancials(payload?.data ?? null))
+      .catch(() => setFinancials(null))
+  }, [])
+
   const won     = BIDS.filter(b => b.status === "won")
   const decided = BIDS.filter(b => ["won","lost"].includes(b.status))
   const winRate = decided.length > 0 ? Math.round(won.length / decided.length * 100) : 0
-  const pipeline = [...active, ...sent].reduce((s, b) => s + b.bid_value, 0)
-  const activeVal = active.reduce((s, b) => s + b.bid_value, 0)
-  const sentVal = sent.reduce((s, b) => s + b.bid_value, 0)
-
   const urgent = BIDS.filter(b => {
     const days = daysUntil(b.deadline)
     return days <= 14 && days >= 0 && !["won","lost","no-bid"].includes(b.status)
@@ -119,6 +123,10 @@ export default function DashboardPage() {
   activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   const recentActivity = activities.slice(0, 5)
 
+  const totalRevenueKpi = financials?.kpis?.total_revenue ?? null
+  const averageGpKpi = financials?.kpis?.average_gp_pct ?? null
+  const topClientKpi = financials?.kpis?.top_client_by_revenue ?? null
+
   return (
     <div>
       <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400, marginBottom: "1.25rem" }}>{dateStr}</p>
@@ -128,33 +136,27 @@ export default function DashboardPage() {
           border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
           display: "flex", flexDirection: "column", gap: "0.5rem",
         }}>
-          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500 }}>Pipeline</p>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500 }}>Total Revenue</p>
           <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>
-            {formatCurrency(pipeline)}
+            {totalRevenueKpi != null ? formatCurrency(totalRevenueKpi) : "—"}
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.15rem" }}>
-            <MiniBar values={[activeVal, sentVal]} colors={["#3b6fa0", "#b8860b"]} />
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem", fontSize: "11px", color: "var(--ink-faint)" }}>
-            <span><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#3b6fa0", marginRight: 4 }} />Active {formatCompact(activeVal)}</span>
-            <span><span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#b8860b", marginRight: 4 }} />Sent {formatCompact(sentVal)}</span>
-          </div>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>from jobs ledger</p>
         </div>
 
         <div style={{
           border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
         }}>
-          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Active Bids</p>
-          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{active.length}</p>
-          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>in estimation</p>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Average GP%</p>
+          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{averageGpKpi != null ? `${Math.round(averageGpKpi * 10) / 10}%` : "—"}</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>across parsed financials</p>
         </div>
 
         <div style={{
           border: "1px solid var(--border)", borderRadius: "10px", padding: "1rem 1.25rem",
         }}>
-          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Awaiting</p>
-          <p style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{sent.length}</p>
-          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>pending decision</p>
+          <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.35rem" }}>Top Client</p>
+          <p style={{ fontSize: "1.35rem", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{topClientKpi?.client ?? "—"}</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)", marginTop: "0.25rem" }}>{topClientKpi?.revenue != null ? formatCurrency(topClientKpi.revenue) : "no revenue data"}</p>
         </div>
 
         <div style={{

@@ -17,8 +17,8 @@ const API_KEY  = 'wc_2026_xK9mP'  // Change this — paste same value in Vercel 
 
 // ── HTTP Handlers ─────────────────────────────────────────────────────────
 
-function doGet(e)  { return route(e, (e.parameter || {}).method || 'GET')  }  // ← must be doGet
-function doPost(e) { return route(e, (e.parameter || {}).method || 'POST') } // ← must be doPost
+function doGet(e)  { if (!e) return out({ error: 'Run setup() from editor, not doGet' }); return route(e, (e.parameter || {}).method || 'GET')  }
+function doPost(e) { if (!e) return out({ error: 'Use web app URL' }); return route(e, (e.parameter || {}).method || 'POST') }
 
 function route(e, method) {
   if ((e.parameter || {}).key !== API_KEY) return out({ error: 'Unauthorized' }, 401)

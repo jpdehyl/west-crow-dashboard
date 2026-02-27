@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BIDS, PROJECTS } from "@/lib/data"
 import { formatCurrency, daysUntil } from "@/lib/utils"
 import Link from "next/link"
 
@@ -39,12 +38,6 @@ function WinRateArc({ pct }: { pct: number }) {
   )
 }
 
-function formatCompact(n: number): string {
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-  if (n >= 1000) return `$${Math.round(n / 1000)}K`
-  return `$${n}`
-}
-
 function relativeDate(d: string): string {
   const now = new Date()
   const then = new Date(d)
@@ -69,6 +62,8 @@ type FinancialAnalytics = {
 
 export default function DashboardPage() {
   const [financials, setFinancials] = useState<FinancialAnalytics | null>(null)
+  const [bids, setBids] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch("/api/analytics")
@@ -77,10 +72,20 @@ export default function DashboardPage() {
       .catch(() => setFinancials(null))
   }, [])
 
-  const won     = BIDS.filter(b => b.status === "won")
-  const decided = BIDS.filter(b => ["won","lost"].includes(b.status))
+  useEffect(() => {
+    fetch("/api/bids")
+      .then((r) => r.json())
+      .then((data) => {
+        setBids(Array.isArray(data) ? data : data.bids ?? [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const won     = bids.filter(b => b.status === "won")
+  const decided = bids.filter(b => ["won","lost"].includes(b.status))
   const winRate = decided.length > 0 ? Math.round(won.length / decided.length * 100) : 0
-  const urgent = BIDS.filter(b => {
+  const urgent = bids.filter(b => {
     const days = daysUntil(b.deadline)
     return days <= 14 && days >= 0 && !["won","lost","no-bid"].includes(b.status)
   }).sort((a,b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
@@ -89,15 +94,9 @@ export default function DashboardPage() {
     weekday: "long", month: "long", day: "numeric"
   })
 
-  const today = new Date(); today.setHours(0,0,0,0)
-  const onSite = PROJECTS.filter(p => {
-    const start = new Date(p.start_date); start.setHours(0,0,0,0)
-    return p.status === 'active' && start <= today
-  })
-
   const activities: { icon: string; text: string; date: string; href: string }[] = []
-  BIDS.forEach(bid => {
-    bid.timeline.forEach(ev => {
+  bids.forEach(bid => {
+    ;(bid.timeline ?? []).forEach(ev => {
       let text = ""
       if (ev.stage === "invited") text = `${bid.project_name} — bid invite received`
       else if (ev.stage === "estimating") text = `${bid.project_name} — estimation started`
@@ -110,15 +109,6 @@ export default function DashboardPage() {
         activities.push({ icon: icons[ev.stage] || "•", text, date: ev.date, href: `/bids/${bid.id}` })
       }
     })
-  })
-  PROJECTS.forEach(proj => {
-    if (proj.invoices) {
-      proj.invoices.forEach(inv => {
-        if (inv.sent_date) {
-          activities.push({ icon: "💰", text: `${proj.project_name} — Invoice ${inv.number} sent`, date: inv.sent_date, href: `/projects/${proj.id}` })
-        }
-      })
-    }
   })
   activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   const recentActivity = activities.slice(0, 5)
@@ -173,73 +163,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="content-grid" style={{ display: "grid", gap: "0.75rem", marginBottom: "1.5rem", alignItems: "start" }}>
-        {onSite.length > 0 && (
+        {loading && (
           <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
             <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
-              On Site
+              Due Soon
             </h2>
-            {onSite.map((project, i) => {
-              const spent   = project.costs.reduce((s,c) => s + c.amount, 0)
-              const budget  = project.budget_labour + project.budget_materials + project.budget_equipment + project.budget_subs
-              const pct     = budget > 0 ? Math.round(spent / budget * 100) : 0
-              const startD  = new Date(project.start_date); startD.setHours(0,0,0,0)
-              const endD    = new Date(project.end_date);   endD.setHours(0,0,0,0)
-              const totalD  = Math.max(1, Math.ceil((endD.getTime() - startD.getTime()) / 86400000))
-              const elapsed = Math.ceil((today.getTime() - startD.getTime()) / 86400000)
-              const daysLeft = Math.max(0, Math.ceil((endD.getTime() - today.getTime()) / 86400000))
-              const timePct = Math.round(Math.min(elapsed / totalD, 1) * 100)
-              const isLast  = i === onSite.length - 1
-
-              return (
-                <Link key={project.id} href={`/projects/${project.id}`}
-                  className="row-hover"
-                  style={{
-                    display: "block", padding: "0.75rem 0", textDecoration: "none",
-                    borderBottom: isLast ? "none" : "1px solid var(--border)",
-                  }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>{project.project_name}</span>
-                      <span style={{ fontSize: "12px", color: "var(--ink-faint)", marginLeft: "0.5rem" }}>{project.client}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 }}>
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>
-                        {formatCurrency(project.contract_value)}
-                      </span>
-                      <span style={{ fontSize: "11px", fontWeight: 500, color: "var(--sage)", background: "var(--sage-light)", padding: "2px 6px", borderRadius: "4px" }}>
-                        Day {elapsed}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                        <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Budget</span>
-                        <span style={{ fontSize: "11px", color: pct > 85 ? "var(--terra)" : "var(--ink-muted)", fontWeight: 500 }}>
-                          {formatCompact(spent)} / {formatCompact(budget)}
-                        </span>
-                      </div>
-                      <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${Math.min(pct,100)}%`, background: pct > 85 ? "var(--terra)" : "var(--sage)", borderRadius: 3 }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                        <span style={{ fontSize: "11px", color: "var(--ink-faint)" }}>Timeline</span>
-                        <span style={{ fontSize: "11px", color: "var(--ink-muted)", fontWeight: 500 }}>{daysLeft}d left</span>
-                      </div>
-                      <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${timePct}%`, background: "var(--gold)", borderRadius: 3 }} />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ height: 36, width: "100%", background: "#f7f2e9", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s ease-in-out infinite" }} />
+            ))}
           </div>
         )}
 
-        {urgent.length > 0 && (
+        {!loading && urgent.length > 0 && (
           <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
             <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
               Due Soon
@@ -283,7 +218,18 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {recentActivity.length > 0 && (
+      {loading && (
+        <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+          <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+            Recent Activity
+          </h2>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ height: 28, width: "100%", background: "#f7f2e9", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s ease-in-out infinite" }} />
+          ))}
+        </div>
+      )}
+
+      {!loading && recentActivity.length > 0 && (
         <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
           <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
             Recent Activity

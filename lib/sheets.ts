@@ -1,133 +1,117 @@
-// Data layer — Vercel KV backend
-// Replaces the Google Apps Script / SHEETS_API_URL approach.
-// KV keys: "bids", "clients", "projects"
-// On first run, seeds with empty arrays (no static seed data).
+// Data layer — Supabase Postgres backend
+// Replaces Vercel KV. Same exported function signatures.
 
-import { kv } from '@vercel/kv'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-async function kvGet<T>(key: string): Promise<T[]> {
-  const val = await kv.get<T[]>(key)
-  if (!val) {
-    await kv.set(key, [])
-    return []
-  }
-  return val
-}
-
-async function kvSet<T>(key: string, data: T[]): Promise<void> {
-  await kv.set(key, data)
-}
+import { supabase } from './supabase'
 
 // ── Bids ─────────────────────────────────────────────────────────────────────
 
 export async function getBids() {
-  return kvGet<any>('bids')
+  const { data, error } = await supabase.from('bids').select('*').order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
 }
 
 export async function getBid(id: string) {
-  const bids = await getBids()
-  return bids.find((b: any) => b.id === id) ?? null
+  const { data, error } = await supabase.from('bids').select('*').eq('id', id).single()
+  if (error) return null
+  return data
 }
 
 export async function createBid(data: object) {
-  const bids = await getBids()
-  const bid = { created_at: new Date().toISOString(), ...data }
-  bids.push(bid)
-  await kvSet('bids', bids)
-  return bid
+  const bid = { created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...data }
+  const { data: result, error } = await supabase.from('bids').insert(bid).select().single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
 export async function updateBid(id: string, data: object) {
-  const bids = await getBids()
-  const idx = bids.findIndex((b: any) => b.id === id)
-  if (idx === -1) return null
-  bids[idx] = { ...bids[idx], ...data }
-  await kvSet('bids', bids)
-  return bids[idx]
-}
-
-// ── Projects ──────────────────────────────────────────────────────────────────
-
-export async function getProjects() {
-  return kvGet<any>('projects')
-}
-
-export async function getProject(id: string) {
-  const all = await getProjects()
-  return all.find((p: any) => p.id === id) ?? null
-}
-
-export async function addDailyLog(projectId: string, data: object) {
-  const projects = await getProjects()
-  const idx = projects.findIndex((p: any) => p.id === projectId)
-  if (idx === -1) return null
-  projects[idx].logs = [...(projects[idx].logs ?? []), { ...data, created_at: new Date().toISOString() }]
-  await kvSet('projects', projects)
-  return projects[idx]
-}
-
-export async function addCost(projectId: string, data: object) {
-  const projects = await getProjects()
-  const idx = projects.findIndex((p: any) => p.id === projectId)
-  if (idx === -1) return null
-  projects[idx].costs = [...(projects[idx].costs ?? []), { ...data, created_at: new Date().toISOString() }]
-  await kvSet('projects', projects)
-  return projects[idx]
-}
-
-export async function createInvoice(projectId: string, data: object) {
-  const projects = await getProjects()
-  const idx = projects.findIndex((p: any) => p.id === projectId)
-  if (idx === -1) return null
-  projects[idx].invoices = [...(projects[idx].invoices ?? []), { ...data, created_at: new Date().toISOString() }]
-  await kvSet('projects', projects)
-  return projects[idx]
-}
-
-export async function updateInvoice(projectId: string, data: object) {
-  const projects = await getProjects()
-  const idx = projects.findIndex((p: any) => p.id === projectId)
-  if (idx === -1) return null
-  const invIdx = (projects[idx].invoices ?? []).findIndex((i: any) => i.id === (data as any).id)
-  if (invIdx !== -1) {
-    projects[idx].invoices[invIdx] = { ...projects[idx].invoices[invIdx], ...data }
-  }
-  await kvSet('projects', projects)
-  return projects[idx]
+  const { data: result, error } = await supabase
+    .from('bids')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
 // ── Clients ───────────────────────────────────────────────────────────────────
 
 export async function getClients() {
-  return kvGet<any>('clients')
+  const { data, error } = await supabase.from('clients').select('*').order('name')
+  if (error) throw new Error(error.message)
+  return data ?? []
 }
 
 export async function createClient(data: object) {
-  const clients = await getClients()
   const client = { created_at: new Date().toISOString(), ...data }
-  clients.push(client)
-  await kvSet('clients', clients)
-  return client
+  const { data: result, error } = await supabase.from('clients').insert(client).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+// ── Projects ──────────────────────────────────────────────────────────────────
+
+export async function getProjects() {
+  const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function getProject(id: string) {
+  const { data, error } = await supabase.from('projects').select('*').eq('id', id).single()
+  if (error) return null
+  return data
+}
+
+export async function addDailyLog(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const logs = [...(project.logs ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ logs }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function addCost(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const costs = [...(project.costs ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ costs }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function createInvoice(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const invoices = [...(project.invoices ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ invoices }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function updateInvoice(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const invoices = (project.invoices ?? []).map((i: any) => i.id === (data as any).id ? { ...i, ...data } : i)
+  const { data: result, error } = await supabase.from('projects').update({ invoices }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
 // ── Bid documents & timeline ───────────────────────────────────────────────────
 
 export async function addBidDocument(bidId: string, data: object) {
-  const bids = await getBids()
-  const idx = bids.findIndex((b: any) => b.id === bidId)
-  if (idx === -1) return null
-  bids[idx].documents = [...(bids[idx].documents ?? []), data]
-  await kvSet('bids', bids)
-  return bids[idx]
+  const bid = await getBid(bidId)
+  if (!bid) return null
+  const documents = [...(bid.documents ?? []), data]
+  return updateBid(bidId, { documents })
 }
 
 export async function addBidTimeline(bidId: string, data: object) {
-  const bids = await getBids()
-  const idx = bids.findIndex((b: any) => b.id === bidId)
-  if (idx === -1) return null
-  bids[idx].timeline = [...(bids[idx].timeline ?? []), data]
-  await kvSet('bids', bids)
-  return bids[idx]
+  const bid = await getBid(bidId)
+  if (!bid) return null
+  const timeline = [...(bid.timeline ?? []), data]
+  return updateBid(bidId, { timeline })
 }

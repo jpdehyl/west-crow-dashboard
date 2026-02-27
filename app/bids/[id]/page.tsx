@@ -47,8 +47,11 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           <p style={{ fontSize: "1.35rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             {formatCurrency(bid.bid_value)}
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
             <StatusDot status={bid.status} />
+            <Link href={`/estimate-calculator?bidId=${bid.id}`} style={{ padding: "0.45rem 0.8rem", borderRadius: "7px", border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--ink)", textDecoration: "none", fontSize: "12px", fontWeight: 500 }}>
+              🧮 Quick Calculator
+            </Link>
             <EstimateStatusButton
               bidId={bid.id}
               bidName={bid.project_name}

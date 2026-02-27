@@ -5,6 +5,7 @@ import { StatusDot } from "@/components/StatusDot"
 import Link from "next/link"
 
 type BidStatus = 'active' | 'sent' | 'won' | 'lost' | 'no-bid'
+type StatusFilter = 'all' | BidStatus
 type SortKey   = 'project_name' | 'client' | 'bid_value' | 'deadline' | 'margin_pct'
 type SortDir   = 'asc' | 'desc'
 
@@ -32,7 +33,7 @@ export default function PipelinePage() {
   const [view,         setView]         = useState<'list' | 'board'>('list')
   const [bids,         setBids]         = useState<any[]>([])
   const [loading,      setLoading]      = useState(true)
-  const [filterStatus, setFilterStatus] = useState<BidStatus | null>(null)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search,       setSearch]       = useState('')
   const [sortKey,      setSortKey]      = useState<SortKey>('deadline')
   const [sortDir,      setSortDir]      = useState<SortDir>('asc')
@@ -47,15 +48,12 @@ export default function PipelinePage() {
   // Filter + search + sort
   const filtered = useMemo(() => {
     let out = [...bids]
-    if (filterStatus) out = out.filter(b => b.status === filterStatus)
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter(b =>
-        b.project_name?.toLowerCase().includes(q) ||
-        b.client?.toLowerCase().includes(q) ||
-        b.estimator?.toLowerCase().includes(q)
-      )
-    }
+    const q = search.toLowerCase()
+    out = out.filter(b =>
+      String(b.project_name ?? '').toLowerCase().includes(q) ||
+      String(b.client ?? '').toLowerCase().includes(q)
+    )
+    if (statusFilter !== 'all') out = out.filter(b => b.status === statusFilter)
     out.sort((a, b) => {
       let va = a[sortKey] ?? ''
       let vb = b[sortKey] ?? ''
@@ -74,7 +72,7 @@ export default function PipelinePage() {
       return 0
     })
     return out
-  }, [bids, filterStatus, search, sortKey, sortDir])
+  }, [bids, statusFilter, search, sortKey, sortDir])
 
   const pipeline = bids.filter(b => b.status === 'active' || b.status === 'sent').reduce((s, b) => s + b.bid_value, 0)
 
@@ -130,57 +128,48 @@ export default function PipelinePage() {
         {STAGES.map(({ key, label }, i) => {
           const count    = bids.filter(b => b.status === key).length
           const val      = bids.filter(b => b.status === key).reduce((s, b) => s + b.bid_value, 0)
-          const isActive = filterStatus === key
           return (
-            <button key={key} onClick={() => setFilterStatus(isActive ? null : key)} style={{
-              flex: 1, padding: "0.75rem 1rem", background: isActive ? "var(--ink)" : "var(--bg)",
+            <div key={key} style={{
+              flex: 1, padding: "0.75rem 1rem", background: "var(--bg)",
               borderRight: i < STAGES.length - 1 ? "1px solid var(--border)" : "none",
-              border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-              transition: "background 0.12s",
+              textAlign: "left",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.5rem" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "white" : STATUS_COLOR[key], display: "inline-block" }} />
-                <span style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: isActive ? "rgba(255,255,255,0.7)" : "var(--ink-faint)", fontWeight: 500 }}>{label}</span>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLOR[key], display: "inline-block" }} />
+                <span style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500 }}>{label}</span>
               </div>
-              <p style={{ fontSize: "1.5rem", fontWeight: 600, color: isActive ? "white" : "var(--ink)", letterSpacing: "-0.02em" }}>
+              <p style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
                 {loading ? "—" : count}
               </p>
-              {val > 0 && <p style={{ fontSize: "11px", color: isActive ? "rgba(255,255,255,0.6)" : "var(--ink-faint)", marginTop: "0.2rem" }}>{formatCurrency(val)}</p>}
-            </button>
+              {val > 0 && <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.2rem" }}>{formatCurrency(val)}</p>}
+            </div>
           )
         })}
       </div>
 
-      {/* Search + filter bar */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", alignItems: "center" }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <span style={{ position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "var(--ink-faint)", pointerEvents: "none" }}>⌕</span>
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search project, client, estimator…"
-            style={{
-              width: "100%", padding: "0.6rem 0.85rem 0.6rem 2.2rem",
-              background: "var(--bg)", border: "1px solid var(--border)",
-              borderRadius: "8px", fontSize: "13px", color: "var(--ink)",
-              outline: "none", fontFamily: "inherit", boxSizing: "border-box",
-            }}
-          />
+      {/* Search + status filter bar */}
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search project or client..."
+          style={{ flex: 1, minWidth: 200, border: "1px solid #d9ccba", borderRadius: "8px", padding: "0.5rem 0.75rem", fontSize: "13px", background: "#fff", color: "var(--ink)" }}
+        />
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          {(['all', 'active', 'sent', 'won', 'lost', 'no-bid'] as const).map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)} style={{
+              padding: "0.35rem 0.75rem", borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", border: "1px solid",
+              background: statusFilter === s ? "#c4714a" : "var(--bg-subtle)",
+              color: statusFilter === s ? "#fff" : "var(--ink-faint)",
+              borderColor: statusFilter === s ? "#c4714a" : "var(--border)",
+              textTransform: "capitalize",
+            }}>{s === 'all' ? 'All' : s}</button>
+          ))}
         </div>
-        {(filterStatus || search) && (
-          <button onClick={() => { setFilterStatus(null); setSearch('') }} style={{
-            padding: "0.6rem 1rem", fontSize: "12px", color: "var(--ink-muted)",
-            background: "var(--bg-subtle)", border: "1px solid var(--border)",
-            borderRadius: "8px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-          }}>
-            Clear filters ×
-          </button>
-        )}
-        <span style={{ fontSize: "12px", color: "var(--ink-faint)", whiteSpace: "nowrap" }}>
-          {!loading && filtered.length !== bids.length ? `${filtered.length} of ${bids.length}` : ""}
-        </span>
       </div>
+      <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+        Showing {filtered.length} of {bids.length} bids
+      </p>
 
       {loading ? (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--ink-faint)", fontSize: "13px" }}>Loading pipeline…</div>
@@ -191,7 +180,7 @@ export default function PipelinePage() {
           {filtered.length === 0 ? (
             <div style={{ padding: "3rem", textAlign: "center", color: "var(--ink-faint)", fontSize: "13px" }}>
               No bids match your filters.{" "}
-              <button onClick={() => { setFilterStatus(null); setSearch('') }} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", textDecoration: "underline" }}>Clear</button>
+              <button onClick={() => { setStatusFilter('all'); setSearch('') }} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", textDecoration: "underline" }}>Clear</button>
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>

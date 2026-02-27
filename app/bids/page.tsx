@@ -83,7 +83,7 @@ export default function PipelinePage() {
     else { setSortKey(key); setSortDir('asc') }
   }
 
-  function SortIcon({ col }: { col: SortKey }) {
+  function renderSortIcon(col: SortKey) {
     if (sortKey !== col) return <span style={{ color: "var(--border)", marginLeft: "0.25rem" }}>↕</span>
     return <span style={{ color: "var(--accent)", marginLeft: "0.25rem" }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
@@ -205,7 +205,7 @@ export default function PipelinePage() {
                       fontWeight: 500, borderBottom: "1px solid var(--border)",
                       whiteSpace: "nowrap", cursor: "pointer", userSelect: "none",
                     }}>
-                      {label}<SortIcon col={key} />
+                      {label}{renderSortIcon(key)}
                     </th>
                   ))}
                   <th className="col-hide-mobile" style={{ textAlign: "left", padding: "0.55rem 1rem", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>Stage</th>
@@ -217,7 +217,7 @@ export default function PipelinePage() {
                     fontWeight: 500, borderBottom: "1px solid var(--border)",
                     whiteSpace: "nowrap", cursor: "pointer", userSelect: "none",
                   }}>
-                    Margin<SortIcon col="margin_pct" />
+                    Margin{renderSortIcon("margin_pct")}
                   </th>
                 </tr>
               </thead>

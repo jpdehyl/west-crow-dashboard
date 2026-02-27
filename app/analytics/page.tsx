@@ -111,6 +111,28 @@ export default async function AnalyticsPage() {
   })
   const maxContract = Math.max(...projectStats.map((p: any) => p.contract), 1)
 
+  // ── Historical data from WCC financial files (Dropbox) ─────────────────────
+  // Source: Sales by Customer Summary — Sep 2023 to Aug 2024 (BuilderTrend export)
+  const historical = {
+    period: 'Sep 2023 – Aug 2024',
+    revenue: 1684460.13,
+    gcClients: 48,
+    avgGP: 48.1,   // from 2021 Jobs Report — consistent GP target across all years
+    topClients: [
+      { name: 'VPAC Construction Group',        revenue: 269194.97 },
+      { name: 'Alfred Horie Construction',       revenue: 188315.92 },
+      { name: 'The Restorers Group',             revenue: 90476.00  },
+      { name: 'Little Star Renovations',         revenue: 88837.24  },
+      { name: 'Baja Construction Canada',        revenue: 85001.07  },
+      { name: 'Onni Property Management',        revenue: 79818.35  },
+      { name: 'Holaco Construction',             revenue: 79017.18  },
+      { name: 'Terrafirma Industries',           revenue: 63836.00  },
+      { name: 'PR Pomeroy Restoration',          revenue: 61500.00  },
+      { name: 'Jedan Brothers Contracting',      revenue: 50726.07  },
+    ],
+  }
+  const maxHistorical = historical.topClients[0].revenue
+
   return (
     <div style={{ maxWidth: "960px" }}>
 
@@ -122,6 +144,41 @@ export default async function AnalyticsPage() {
         <h1 style={{ fontFamily: "var(--font-serif), serif", fontSize: "2.25rem", fontWeight: 400, letterSpacing: "-0.03em", color: "var(--ink)" }}>
           Analytics
         </h1>
+      </div>
+
+      {/* Historical baseline KPIs */}
+      <Section title={`Company Baseline — ${historical.period}`} />
+      <div className="kpi-grid-4" style={{ gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", marginBottom: "1.5rem" }}>
+        {[
+          { label: "Annual Revenue",   value: formatCurrency(historical.revenue), sub: historical.period, accent: true },
+          { label: "GC Clients",       value: String(historical.gcClients),        sub: "active relationships" },
+          { label: "Avg Gross Profit", value: `${historical.avgGP}%`,              sub: "company target" },
+          { label: "Top Client",       value: "$269K",                              sub: "VPAC Construction" },
+        ].map(({ label, value, sub, accent }) => (
+          <div key={label} style={{ background: "var(--bg)", padding: "1.25rem 1.5rem" }}>
+            <p style={{ fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.4rem" }}>{label}</p>
+            <p style={{ fontFamily: "var(--font-serif), serif", fontSize: "1.6rem", color: accent ? "var(--terra)" : "var(--ink)", letterSpacing: "-0.03em", lineHeight: 1 }}>{value}</p>
+            <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "0.3rem" }}>{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Top GC clients by revenue */}
+      <Section title={`Top GC Clients — ${historical.period}`} />
+      <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.5rem 1.75rem", marginBottom: "2rem" }}>
+        {historical.topClients.map(c => (
+          <HBar
+            key={c.name}
+            label={c.name}
+            value={c.revenue}
+            max={maxHistorical}
+            formatted={formatCurrency(c.revenue)}
+            color="var(--terra)"
+          />
+        ))}
+        <p style={{ fontSize: "11px", color: "var(--ink-faint)", marginTop: "1rem" }}>
+          Source: BuilderTrend Sales by Customer export — Sep 2023 to Aug 2024
+        </p>
       </div>
 
       {/* KPI row */}

@@ -15,23 +15,16 @@ const nav = [
 export default function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [collapsed, setCollapsed] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return localStorage.getItem("sidebar-collapsed") === "true"
+  })
 
   useEffect(() => {
-    const stored = localStorage.getItem("sidebar-collapsed")
-    if (stored === "true") setCollapsed(true)
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("sidebar-collapsed", String(collapsed))
-    }
-  }, [collapsed, mounted])
+    localStorage.setItem("sidebar-collapsed", String(collapsed))
+  }, [collapsed])
 
   const width = collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)"
-  const isSettings = pathname.startsWith("/settings")
 
   return (
     <aside className="sidebar-transition" style={{
@@ -130,7 +123,6 @@ export default function Sidebar() {
       }}>
         {(() => {
           const name = session?.user?.name || "User"
-          const email = session?.user?.email || ""
           const image = session?.user?.image
           const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
           return (

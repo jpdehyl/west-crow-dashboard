@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { BIDS, PROJECTS } from "@/lib/data"
 import { formatCurrency, daysUntil } from "@/lib/utils"
+import { WinRateArc } from "@/components/WinRateArc"
 import Link from "next/link"
 
 const STATUS: Record<string, { dot: string; label: string }> = {
@@ -20,22 +21,6 @@ function Dot({ status }: { status: string }) {
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
       <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>{s.label}</span>
     </span>
-  )
-}
-
-function WinRateArc({ pct }: { pct: number }) {
-  const r = 18
-  const circ = 2 * Math.PI * r
-  const filled = (pct / 100) * circ
-  return (
-    <svg width="44" height="44" viewBox="0 0 44 44" style={{ display: "block" }} role="img" aria-label={`Win rate ${pct}%`}>
-      <circle cx="22" cy="22" r={r} fill="none" stroke="var(--border)" strokeWidth="4" />
-      <circle cx="22" cy="22" r={r} fill="none" stroke="var(--sage)" strokeWidth="4"
-        strokeDasharray={`${filled} ${circ - filled}`}
-        strokeDashoffset={circ * 0.25}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 0.3s ease" }} />
-    </svg>
   )
 }
 

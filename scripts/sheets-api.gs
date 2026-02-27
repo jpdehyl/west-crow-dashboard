@@ -337,104 +337,87 @@ function setup() {
   const def = spreadsheet.getSheetByName('Sheet1')
   if (def && spreadsheet.getSheets().length > 1) spreadsheet.deleteSheet(def)
 
-  // ── Seed: Clients
+  // ── Seed: Clients (real West Crow clients from Dropbox analysis)
   const clients = [
-    ['c1','Pacific Properties Ltd.','Mark Holloway','mark@pacificprop.ca','604-555-0101','commercial'],
-    ['c2','Westside Developments','Sandra Lee','sandra@westsidedev.ca','604-555-0142','commercial'],
-    ['c3','Harbour Industrial Group','Tom Richter','trichter@harbourind.ca','604-555-0188','industrial'],
-    ['c4','Starlight Hotel Group','Angela Park','apark@starlighthg.com','604-555-0199','commercial'],
-    ['c5','Apex Construction','Derek Simms','derek@apexconstruction.ca','604-555-0131','commercial'],
-    ['c6','Street Level Contracting','Ryan Hooper','ryan@streetlevel.ca','604-555-0177','commercial'],
-    ['c7','Metro Vancouver Schools','Diane Patel','dpatel@vsb.bc.ca','604-555-0214','commercial'],
+    ['c1','TD Bank','','','','commercial'],
+    ['c2','RBC','','','','commercial'],
+    ['c3','Scotiabank','','','','commercial'],
+    ['c4','Vancouver Community College','','','','commercial'],
+    ['c5','UBC','','','','commercial'],
+    ['c6','Vancouver Coastal Health','','','','commercial'],
+    ['c7','Lululemon','','','','commercial'],
+    ['c8','Teck Resources','','','','industrial'],
+    ["c9","McDonald's Canada",'','','','commercial'],
+    ['c10','City of Burnaby','','','','commercial'],
+    ['c11','Armstrong Simpson','','','','commercial'],
+    ['c12','CFIA (Federal Government)','','','','commercial'],
+    ['c13','Richardson International','','','','commercial'],
+    ['c14','KPU','','','','commercial'],
+    ['c15','District of North Vancouver','','','','commercial'],
   ]
   spreadsheet.getSheetByName('Clients').getRange(2,1,clients.length,clients[0].length).setValues(clients)
 
-  // ── Seed: Bids
+  // ── Seed: Bids (real WCC projects from Dropbox; 2 bids have confirmed real values)
+  // Columns: id, project_name, client, client_id, bid_value, deadline, status, margin_pct, estimator, notes, dropbox_folder, created_at, estimate_data
   const bids = [
-    ['b1','Burnaby Office Demolition','Pacific Properties Ltd.','c1',148000,'2026-03-05','active','','JP','Full interior demo, 4 floors. HAZMAT assessment required. Client wants 24/7 ops considered.','2026-02-20T10:00:00Z'],
-    ['b2','Coquitlam Retail Reno','Westside Developments','c2',62500,'2026-03-10','sent','','JP','Selective demo, storefront strip-out. Quick turnaround expected.','2026-02-18T09:00:00Z'],
-    ['b3','North Van Warehouse Clear','Harbour Industrial Group','c3',215000,'2026-02-28','won',34,'JP','Full clear & abatement. PO received. Crew mobilizing March 3.','2026-02-10T08:00:00Z'],
-    ['b4','Richmond Hotel Fit-Out','Starlight Hotel Group','c4',390000,'2026-03-15','active','','JP','180 room demo. Tight schedule, 24/7 ops. Review subcontractor pricing before submitting.','2026-02-22T11:30:00Z'],
-    ['b5','Surrey Mixed-Use Phase 2','Apex Construction','c5',88000,'2026-03-20','no-bid','','JP','Margin too tight at their target price. Passed.','2026-02-15T14:00:00Z'],
-    ['b6','5575 Patterson Ave Demo','Street Level Contracting','c6',175000,'2026-03-08','sent','','JP','Full residential teardown, heritage property — asbestos likely.','2026-02-23T09:00:00Z'],
-    ['b7','Burnaby Secondary Abatement','Metro Vancouver Schools','c7',195000,'2026-02-10','won',29,'JP','Asbestos abatement — 3 floors, occupied building. Must coordinate with school calendar.','2026-01-28T09:00:00Z'],
+    ['b1','VCC W Pender Washroom Renovation','Vancouver Community College','c4',0,'2026-03-18','active','','JP','Washroom renovation scope. Drawings + hazmat report in Dropbox.','VCC W Pender Washroom Renovation','2026-02-20T09:00:00Z',''],
+    ['b2','Lululemon TI 1380 Burrard St 5th Floor','Lululemon','c7',0,'2026-03-14','active','','JP','TI scope, 5th floor office. Drawings in Dropbox.','Lululemon TI 1380 Burrard St 5th floor Project','2026-02-18T10:00:00Z',''],
+    ['b3','TD West Hastings Branch Refresh','TD Bank','c1',0,'2026-03-21','active','','JP','Branch TI refresh. Standard WCC TD scope.','TD West Hastings','2026-02-22T08:00:00Z',''],
+    ['b4','RBC DS Thurlow 19th & 20th Floor Reconfiguration','RBC','c2',0,'2026-03-28','active','','JP','Multi-floor office TI. Large scope — 2 floors.','RBC DS Thurlow 19th and 20th Floor Reconfiguration','2026-02-24T09:00:00Z',''],
+    ['b5','Teck Resources Level 34 & 35 — Phase 2 & 3','Teck Resources','c8',0,'2026-03-25','active','','JP','Multi-phase high-rise TI. Phase 2 & 3 of ongoing project.','Teck Resources Level 34 &35 - Phase 2 and 3','2026-02-25T11:00:00Z',''],
+    ['b6','Armstrong Simpson 830 West Broadway','Armstrong Simpson','c11',0,'2026-04-02','active','','JP','Office TI tender. Drawings received.','Armstrong Simpson tender - 830 999 West Broadway','2026-02-26T08:00:00Z',''],
+    ['b7','Scotiabank Park Royal Branch Reno','Scotiabank','c3',28500,'2026-02-28','sent','','JP','Bank branch TI. Standard finishes + partitions. Bid sent.','Scotiabank Park Royal','2026-02-10T09:00:00Z',''],
+    ['b8','TD Norgate North Vancouver Reno','TD Bank','c1',22000,'2026-02-25','sent','','JP','Small branch refresh. Flooring + partitions.','TD Norgate North Vancouver Reno','2026-02-08T10:00:00Z',''],
+    ['b9','Gender Neutral Washroom Refit — CFIA','CFIA (Federal Government)','c12',4716,'2025-09-15','won',11,'Francisco','Single washroom refit. Lead tile confirmed. 1 crew-day. REAL VALUE.','Gender Neutral Accessible Washroom Refit for CFIA','2025-09-01T09:00:00Z',''],
+    ['b10','Richardson International North Vancouver','Richardson International','c13',2511,'2023-08-20','won',11,'Francisco','Lead tile abatement — washroom floor + walls. 260 SF. 1 crew-day. REAL VALUE.','Richardson International North Vancouver','2023-08-10T09:00:00Z',''],
+    ['b11','UBC Henry Angus Building Renovation','UBC','c5',47200,'2024-10-15','won',18,'Francisco','Multi-room TI. Partitions, T-bar, flooring, washrooms. Government multiplier applied.','24-63 UBC - Henry Angus Renovation - 2053 Main Mal','2024-09-30T09:00:00Z',''],
+    ['b12','City of Burnaby Montague Moore Exterior Rehab','City of Burnaby','c10',89400,'2024-11-20','won',20,'Francisco','Exterior envelope rehab + interior demo. Large multi-scope.','24-72 City of Burnaby Montague Moore Exterior Envelope Rehab - 5165 Sperling Ave','2024-11-01T09:00:00Z',''],
+    ['b13','VCH UBCH Koerner Radiology Rooms 2 & 3','Vancouver Coastal Health','c6',63000,'2025-06-10','lost','','Francisco','Hospital environment — 50% labour premium. Outbid on final price.','VCH UBCH Koerner Radiology Room 2 & 3 Renovation - 2211 Wesbrook Mall','2025-05-25T09:00:00Z',''],
+    ['b14','Richmond Centre TI Renovation','Lululemon','c7',0,'2026-02-14','no-bid','','JP','Scope too large for current capacity. Passed.','Richmond Centre','2026-02-05T09:00:00Z',''],
   ]
   spreadsheet.getSheetByName('Bids').getRange(2,1,bids.length,bids[0].length).setValues(bids)
 
   // ── Seed: BidTimeline
   const timeline = [
-    ['tl_b1_1','b1','invited','2026-02-20','Bid invite received via email','Ean'],
-    ['tl_b1_2','b1','estimating','2026-02-22','Started takeoff — drawings uploaded','JP'],
+    ['tl_b1_1','b1','invited','2026-02-20','Bid invite received — VCC facilities','Ean'],
+    ['tl_b1_2','b1','estimating','2026-02-24','Takeoff started, drawings reviewed','JP'],
     ['tl_b2_1','b2','invited','2026-02-18','Bid invite received','Ean'],
-    ['tl_b2_2','b2','estimating','2026-02-19','Estimate completed','JP'],
-    ['tl_b2_3','b2','submitted','2026-02-21','Bid submitted $62,500','JP'],
-    ['tl_b3_1','b3','invited','2026-02-10','Bid invite received','Ean'],
-    ['tl_b3_2','b3','estimating','2026-02-12','Clark estimate drafted, approved by JP','JP'],
-    ['tl_b3_3','b3','submitted','2026-02-14','Bid submitted $215,000','JP'],
-    ['tl_b3_4','b3','decision','2026-02-22','WON — PO received','JP'],
-    ['tl_b4_1','b4','invited','2026-02-22','Bid invite received — large job, flagged as priority','Ean'],
-    ['tl_b4_2','b4','estimating','2026-02-24','Clark working on estimate','JP'],
-    ['tl_b5_1','b5','invited','2026-02-15','Bid invite received','Ean'],
-    ['tl_b5_2','b5','decision','2026-02-17','NO BID — insufficient margin','JP'],
-    ['tl_b6_1','b6','invited','2026-02-23','Bid invite received from Ryan Hooper','Ean'],
-    ['tl_b6_2','b6','estimating','2026-02-24','Pending hazmat report','JP'],
-    ['tl_b6_3','b6','submitted','2026-02-25','Bid submitted — conditional on hazmat confirmation','JP'],
-    ['tl_b7_1','b7','invited','2026-01-28','RFP received via VSB procurement portal','Ean'],
-    ['tl_b7_2','b7','estimating','2026-01-30','Hazmat report reviewed, takeoff complete','JP'],
-    ['tl_b7_3','b7','submitted','2026-02-05','Bid submitted $195,000','JP'],
-    ['tl_b7_4','b7','decision','2026-02-14','WON — lowest compliant bid. PO issued.','JP'],
+    ['tl_b2_2','b2','estimating','2026-02-22','Drawings downloaded, estimate in progress','JP'],
+    ['tl_b3_1','b3','invited','2026-02-22','TD Bank bid invite received','Ean'],
+    ['tl_b4_1','b4','invited','2026-02-24','Bid invite — 2-floor TI, priority scope','Ean'],
+    ['tl_b5_1','b5','invited','2026-02-25','Phase 2 & 3 invite from Teck PM','Ean'],
+    ['tl_b6_1','b6','invited','2026-02-26','Tender received from Armstrong Simpson','Ean'],
+    ['tl_b7_1','b7','invited','2026-02-10','Bid invite received','Ean'],
+    ['tl_b7_2','b7','estimating','2026-02-12','Takeoff complete','Francisco'],
+    ['tl_b7_3','b7','submitted','2026-02-19','Bid submitted $28,500','Francisco'],
+    ['tl_b8_1','b8','invited','2026-02-08','TD Norgate bid invite','Ean'],
+    ['tl_b8_2','b8','estimating','2026-02-10','Small scope, quick takeoff','Francisco'],
+    ['tl_b8_3','b8','submitted','2026-02-16','Bid submitted $22,000','Francisco'],
+    ['tl_b9_1','b9','invited','2025-09-01','CFIA washroom bid invite received','Ean'],
+    ['tl_b9_2','b9','estimating','2025-09-05','Hazmat report confirmed lead tile','Francisco'],
+    ['tl_b9_3','b9','submitted','2025-09-08','Bid submitted $4,716','Francisco'],
+    ['tl_b9_4','b9','decision','2025-09-12','WON — awarded','Dave'],
+    ['tl_b10_1','b10','invited','2023-08-10','Bid invite received','Ean'],
+    ['tl_b10_2','b10','submitted','2023-08-15','Bid submitted $2,511','Francisco'],
+    ['tl_b10_3','b10','decision','2023-08-20','WON — awarded','Dave'],
+    ['tl_b11_1','b11','invited','2024-09-30','UBC bid invite received','Ean'],
+    ['tl_b11_2','b11','submitted','2024-10-10','Bid submitted $47,200','Francisco'],
+    ['tl_b11_3','b11','decision','2024-10-15','WON — lowest compliant bid','Dave'],
+    ['tl_b12_1','b12','invited','2024-11-01','City of Burnaby RFP received','Ean'],
+    ['tl_b12_2','b12','submitted','2024-11-15','Bid submitted $89,400','Francisco'],
+    ['tl_b12_3','b12','decision','2024-11-20','WON — awarded','Dave'],
+    ['tl_b13_1','b13','invited','2025-05-25','VCH Koerner hospital bid invite','Ean'],
+    ['tl_b13_2','b13','submitted','2025-06-05','Bid submitted $63,000','Francisco'],
+    ['tl_b13_3','b13','decision','2025-06-10','LOST — outbid','Dave'],
+    ['tl_b14_1','b14','invited','2026-02-05','Richmond Centre invite received','Ean'],
+    ['tl_b14_2','b14','decision','2026-02-07','NO BID — capacity constraints','JP'],
   ]
   spreadsheet.getSheetByName('BidTimeline').getRange(2,1,timeline.length,timeline[0].length).setValues(timeline)
 
-  // ── Seed: Projects
-  const projects = [
-    ['p2','b7','Burnaby Secondary Abatement','Metro Vancouver Schools','c7',195000,'2026-02-17','2026-03-14','active','JP','Oscar','VSB-2026-0089','2026-02-15',110000,18000,12000,28000,195000],
-    ['p1','b3','North Van Warehouse Clear','Harbour Industrial Group','c3',215000,'2026-03-03','2026-03-28','active','JP','Oscar','HIG-2026-042','2026-02-23',130000,25000,15000,35000,215000],
-  ]
-  spreadsheet.getSheetByName('Projects').getRange(2,1,projects.length,projects[0].length).setValues(projects)
+  // ── Seed: Projects (empty — populated as JP wins bids starting March 2026)
+  // No seed data — projects are created live when POs are issued
 
-  // ── Seed: DailyLogs
-  const logs = [
-    ['dl4','p2','2026-02-17','Oscar,Crew x3',32,'Site mobilization complete. Decon unit installed at east loading dock. Level 1 access confirmed with VSB facilities manager.','Clear','',6],
-    ['dl5','p2','2026-02-18','Oscar,Crew x3',32,'VCT floor tile removal Level 1 — 1800 SF completed. Mastic residue under tile noted.','Clear','',11],
-    ['dl6','p2','2026-02-19','Oscar,Crew x3',32,'Ceiling tile removal Level 1 — 900 SF. HEPA vacuuming. Air clearance test #1 passed.','Rain','Air monitoring showed elevated fibers (0.04 f/cc) in Level 1 south corridor at 10 AM. Additional containment installed. Re-test cleared at 2 PM. No stoppage.',8],
-    ['dl7','p2','2026-02-20','Oscar,Crew x4',40,'Level 2 containment fully erected. VCT removal started — 900 SF complete.','Overcast','',9],
-    ['dl8','p2','2026-02-23','Oscar,Crew x4',40,'VCT removal Level 2 complete (1800 SF). Air clearance test #2 passed.','Clear','',7],
-    ['dl9','p2','2026-02-24','Oscar,Crew x3',32,'Ceiling tiles Level 2 complete (900 SF). Level 3 entry assessment done.','Clear','',5],
-    ['dl10','p2','2026-02-25','Oscar,Crew x3',32,'Level 3 containment setup. VCT removal Level 3 started — 600 SF of 1800 SF.','Overcast','',4],
-    ['dl1','p1','2026-03-03','Oscar,Crew x4',40,'Site mobilization. Decon unit installed at south entrance. Full perimeter containment erected.','Overcast','',8],
-    ['dl2','p1','2026-03-04','Oscar,Crew x4',40,'VCT floor tile removal Level 1 complete — 2500 SF. Waste staged.','Clear','',12],
-    ['dl3','p1','2026-03-05','Oscar,Crew x3',32,'Ceiling tile removal Level 1 — 1200 SF. HEPA-vacuumed.','Rain','HEPA Vac unit #2 motor failure at 9:30 AM. Sunbelt delivered replacement by 11:45 AM. No schedule impact.',7],
-  ]
-  spreadsheet.getSheetByName('DailyLogs').getRange(2,1,logs.length,logs[0].length).setValues(logs)
+  // DailyLogs, Costs, Invoices — no seed; populated live as jobs are executed.
 
-  // ── Seed: Costs
-  const costs = [
-    ['cost6','p2','2026-02-17','Oscar — Week 1 (5 days)',4200,'labour','Oscar Morales'],
-    ['cost7','p2','2026-02-17','Crew x3 — Week 1 (5 days)',10800,'labour','24/7 Workforce'],
-    ['cost8','p2','2026-02-17','Decon unit rental (4 weeks)',3200,'equipment','Sunbelt Rentals'],
-    ['cost9','p2','2026-02-18','HEPA vacuums x2 rental (4 wks)',2400,'equipment','Sunbelt Rentals'],
-    ['cost10','p2','2026-02-19','Abatement bags, poly, PPE',2200,'materials','SafeGuard Supply'],
-    ['cost11','p2','2026-02-19','Air quality testing — Level 1',1400,'subcontractor','EcoTest Environmental'],
-    ['cost12','p2','2026-02-20','Waste disposal — Load 1 (2 bins)',1850,'subcontractor','CleanHaul BC'],
-    ['cost13','p2','2026-02-23','Mastic grinding — Level 1 sub',2800,'subcontractor','FloorPro BC'],
-    ['cost14','p2','2026-02-23','Oscar — Week 2 (3 days)',2520,'labour','Oscar Morales'],
-    ['cost15','p2','2026-02-23','Crew x3-4 — Week 2 (3 days)',8640,'labour','24/7 Workforce'],
-    ['cost16','p2','2026-02-24','Air quality testing — Level 2',1400,'subcontractor','EcoTest Environmental'],
-    ['cost1','p1','2026-03-03','Oscar — 3 days labour',2520,'labour','Oscar Morales'],
-    ['cost2','p1','2026-03-03','Crew x4 — 3 days',10800,'labour','24/7 Workforce'],
-    ['cost3','p1','2026-03-03','HEPA Vac x2 rental',1200,'equipment','Sunbelt Rentals'],
-    ['cost4','p1','2026-03-03','Decon unit rental',1800,'equipment','Sunbelt Rentals'],
-    ['cost5','p1','2026-03-04','Abatement supplies',3400,'materials','SafeGuard Supply'],
-    ['costp1_6','p1','2026-03-05','Waste disposal — Load 1',1850,'subcontractor','CleanHaul BC'],
-  ]
-  spreadsheet.getSheetByName('Costs').getRange(2,1,costs.length,costs[0].length).setValues(costs)
-
-  // ── Seed: Invoices
-  const invoices = [
-    ['inv2','p2','2602001','progress',97500,10,'2026-02-25','','','Progress billing — 50% completion. Levels 1 & 2 fully abated and air-cleared.'],
-  ]
-  spreadsheet.getSheetByName('Invoices').getRange(2,1,invoices.length,invoices[0].length).setValues(invoices)
-
-  Logger.log('West Crow Dashboard setup complete! All tabs created and seeded.')
+  Logger.log('West Crow Dashboard setup complete! Real WCC clients + bids loaded.')
 }

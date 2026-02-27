@@ -7,7 +7,6 @@ import { LogoFull, LogoIcon } from "./Logo"
 
 const nav = [
   { href: "/bids", label: "Pipeline", icon: "📋" },
-  { href: "/estimate-calculator", label: "Estimate Calculator", icon: "🧮" },
   { href: "/projects", label: "Projects", icon: "🏗" },
   { href: "/clients", label: "Clients", icon: "👥" },
 ]

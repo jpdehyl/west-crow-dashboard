@@ -7,20 +7,13 @@ from pathlib import Path
 
 import requests
 
+from dropbox_client import get_token
+
 LIST_FOLDER_URL = "https://api.dropboxapi.com/2/files/list_folder"
 LIST_FOLDER_CONTINUE_URL = "https://api.dropboxapi.com/2/files/list_folder/continue"
 ROOT_PATH = "/West Crow Estimators"
 OUTPUT_PATH = Path(os.path.expanduser("~/.openclaw/workspace/dropbox-cache/active-bids-sample.json"))
 
-
-def load_dropbox_token() -> str:
-    token = open(os.path.expanduser("~/.openclaw/workspace/.env"), "r", encoding="utf-8").read()
-    for line in token.splitlines():
-        if line.strip().startswith("DROPBOX_TOKEN="):
-            value = line.split("=", 1)[1].strip().strip('"').strip("'")
-            if value:
-                return value
-    raise RuntimeError("DROPBOX_TOKEN not found in ~/.openclaw/workspace/.env")
 
 
 def dropbox_post(url: str, headers: dict, payload: dict) -> dict:
@@ -70,7 +63,7 @@ def parse_folder(folder_name: str) -> tuple[str | None, str | None, str]:
 
 
 def main() -> None:
-    token = load_dropbox_token()
+    token = get_token()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     root_entries = list_folder_all(token, ROOT_PATH)

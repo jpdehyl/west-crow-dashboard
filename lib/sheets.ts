@@ -1,95 +1,117 @@
-// Sheets API client — calls Google Apps Script web app
-// Falls back to static seed data if SHEETS_API_URL is not set
+// Data layer — Supabase Postgres backend
+// Replaces Vercel KV. Same exported function signatures.
 
-import { BIDS, PROJECTS, CLIENTS } from './data'
+import { supabase } from './supabase'
 
-const API_URL = process.env.SHEETS_API_URL
-const API_KEY = process.env.SHEETS_API_KEY || 'wc_2026_xK9mP'
-
-async function call(path: string, method = 'GET', body?: object) {
-  if (!API_URL) return null
-  try {
-    const url = new URL(API_URL)
-    url.searchParams.set('key', API_KEY)
-    url.searchParams.set('path', path)
-    if (method !== 'GET' && method !== 'POST') {
-      url.searchParams.set('method', method)
-    }
-    const isWrite = method !== 'GET'
-    const res = await fetch(url.toString(), {
-      method: method === 'GET' ? 'GET' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-      next: { revalidate: isWrite ? 0 : 60 },
-      cache: isWrite ? 'no-store' : undefined,
-      redirect: 'follow',
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    // If GAS returns an error object, treat as miss → fallback to seed
-    if (data && typeof data === 'object' && !Array.isArray(data) && data.error) return null
-    return data
-  } catch {
-    return null
-  }
-}
+// ── Bids ─────────────────────────────────────────────────────────────────────
 
 export async function getBids() {
-  return (await call('bids')) ?? BIDS
+  const { data, error } = await supabase.from('bids').select('*').order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
 }
 
 export async function getBid(id: string) {
-  return (await call(`bids/${id}`)) ?? BIDS.find(b => b.id === id) ?? null
+  const { data, error } = await supabase.from('bids').select('*').eq('id', id).single()
+  if (error) return null
+  return data
 }
 
 export async function createBid(data: object) {
-  return call('bids', 'POST', data)
+  const bid = { created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...data }
+  const { data: result, error } = await supabase.from('bids').insert(bid).select().single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
 export async function updateBid(id: string, data: object) {
-  return call(`bids/${id}`, 'PATCH', data)
+  const { data: result, error } = await supabase
+    .from('bids')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
-export async function getProjects() {
-  return (await call('projects')) ?? PROJECTS
-}
-
-export async function addDailyLog(projectId: string, data: object) {
-  return call(`projects/${projectId}/logs`, 'POST', data)
-}
-
-export async function addCost(projectId: string, data: object) {
-  return call(`projects/${projectId}/costs`, 'POST', data)
-}
-
-export async function createInvoice(projectId: string, data: object) {
-  return call(`projects/${projectId}/invoices`, 'POST', data)
-}
-
-export async function updateInvoice(projectId: string, data: object) {
-  return call(`projects/${projectId}/invoices`, 'PATCH', data)
-}
-
-export async function getProject(id: string) {
-  const all = await getProjects()
-  return all.find((p: { id: string }) => p.id === id) ?? null
-}
+// ── Clients ───────────────────────────────────────────────────────────────────
 
 export async function getClients() {
-  return (await call('clients')) ?? CLIENTS
+  const { data, error } = await supabase.from('clients').select('*').order('name')
+  if (error) throw new Error(error.message)
+  return data ?? []
 }
 
 export async function createClient(data: object) {
-  return call('clients', 'POST', data)
+  const client = { created_at: new Date().toISOString(), ...data }
+  const { data: result, error } = await supabase.from('clients').insert(client).select().single()
+  if (error) throw new Error(error.message)
+  return result
 }
 
+// ── Projects ──────────────────────────────────────────────────────────────────
+
+export async function getProjects() {
+  const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function getProject(id: string) {
+  const { data, error } = await supabase.from('projects').select('*').eq('id', id).single()
+  if (error) return null
+  return data
+}
+
+export async function addDailyLog(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const logs = [...(project.logs ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ logs }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function addCost(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const costs = [...(project.costs ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ costs }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function createInvoice(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const invoices = [...(project.invoices ?? []), { ...data, created_at: new Date().toISOString() }]
+  const { data: result, error } = await supabase.from('projects').update({ invoices }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+export async function updateInvoice(projectId: string, data: object) {
+  const project = await getProject(projectId)
+  if (!project) return null
+  const invoices = (project.invoices ?? []).map((i: any) => i.id === (data as any).id ? { ...i, ...data } : i)
+  const { data: result, error } = await supabase.from('projects').update({ invoices }).eq('id', projectId).select().single()
+  if (error) throw new Error(error.message)
+  return result
+}
+
+// ── Bid documents & timeline ───────────────────────────────────────────────────
+
 export async function addBidDocument(bidId: string, data: object) {
-  return call(`bids/${bidId}/documents`, 'POST', data)
+  const bid = await getBid(bidId)
+  if (!bid) return null
+  const documents = [...(bid.documents ?? []), data]
+  return updateBid(bidId, { documents })
 }
 
 export async function addBidTimeline(bidId: string, data: object) {
-  return call(`bids/${bidId}/timeline`, 'POST', data)
+  const bid = await getBid(bidId)
+  if (!bid) return null
+  const timeline = [...(bid.timeline ?? []), data]
+  return updateBid(bidId, { timeline })
 }
-
-// Generic call (for API routes that need direct path access)
-export { call as sheetsCall }

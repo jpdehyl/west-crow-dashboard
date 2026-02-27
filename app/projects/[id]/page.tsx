@@ -6,7 +6,7 @@ import InvoiceActions from "@/components/InvoiceActions"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 const WEATHER_ICON: Record<string, string> = {
   Clear: "☀", Overcast: "☁", Rain: "🌧", Snow: "❄", Fog: "🌫",

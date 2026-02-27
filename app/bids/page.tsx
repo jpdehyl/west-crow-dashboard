@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
+import { useSession } from "next-auth/react"
 import { formatCurrency, formatDate, daysUntil, STATUS_COLOR } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
 import Link from "next/link"
@@ -37,6 +38,30 @@ export default function PipelinePage() {
   const [search,       setSearch]       = useState('')
   const [sortKey,      setSortKey]      = useState<SortKey>('deadline')
   const [sortDir,      setSortDir]      = useState<SortDir>('asc')
+
+  const { data: session } = useSession()
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  async function handleSync() {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      const [dbx, cal] = await Promise.all([
+        fetch('/api/sync/dropbox', { method: 'POST' }).then(r => r.json()),
+        fetch('/api/sync/calendar', { method: 'POST' }).then(r => r.json()),
+      ])
+      const msg = `Dropbox: +${dbx.created ?? 0} new, ${dbx.updated ?? 0} updated · Calendar: +${cal.created ?? 0} new, ${cal.matched ?? 0} matched`
+      setSyncMsg(msg)
+      // Refresh bids
+      fetch('/api/bids').then(r => r.json()).then(data => setBids(Array.isArray(data) ? data : []))
+    } catch {
+      setSyncMsg('Sync failed — check console')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncMsg(null), 6000)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/bids')
@@ -107,6 +132,18 @@ export default function PipelinePage() {
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          {session && (
+            <button onClick={handleSync} disabled={syncing} title="Sync Dropbox + Calendar" style={{
+              padding: "0.45rem 0.9rem", fontSize: "12px", fontWeight: 500,
+              background: "transparent", color: syncing ? "var(--ink-faint)" : "var(--ink-muted)",
+              border: "1px solid var(--border)", borderRadius: "8px", cursor: syncing ? "default" : "pointer",
+              fontFamily: "inherit", letterSpacing: "0.02em", transition: "color 0.12s",
+              display: "flex", alignItems: "center", gap: "0.35rem",
+            }}>
+              <span style={{ display: "inline-block", animation: syncing ? "spin 1s linear infinite" : "none" }}>🔄</span>
+              {syncing ? "Syncing…" : "Sync"}
+            </button>
+          )}
           <div style={{ display: "flex", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
             {(['list','board'] as const).map(v => (
               <button key={v} onClick={() => setView(v)} style={{
@@ -289,6 +326,18 @@ export default function PipelinePage() {
           })}
         </div>
       )}
+      {/* Sync toast */}
+      {syncMsg && (
+        <div style={{
+          position: "fixed", bottom: "1.5rem", right: "1.5rem", zIndex: 1000,
+          background: "var(--ink)", color: "var(--bg)", padding: "0.75rem 1.25rem",
+          borderRadius: "10px", fontSize: "12px", maxWidth: "420px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.18)", lineHeight: 1.5,
+        }}>
+          {syncMsg}
+        </div>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

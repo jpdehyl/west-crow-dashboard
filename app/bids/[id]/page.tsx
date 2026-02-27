@@ -1,4 +1,4 @@
-import { getBid, getClients } from "@/lib/sheets"
+import { getBid, getClients, getProjects } from "@/lib/sheets"
 import { formatCurrency, formatDate, formatDateShort, daysUntil, STATUS_COLOR, statusLabel } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
 import BidActions from "@/components/BidActions"
@@ -18,7 +18,7 @@ const DOC_LABEL: Record<string, string> = { bid_docs: 'Bid Documents', drawings:
 
 export default async function BidDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [bid, clients] = await Promise.all([getBid(id), getClients()])
+  const [bid, clients, projects] = await Promise.all([getBid(id), getClients(), getProjects()])
   if (!bid) notFound()
 
   const client = (clients as any[]).find((c: any) => c.id === bid.client_id)
@@ -26,6 +26,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
   const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)
   const completedStages = new Set((bid.timeline as any[]).map((e: any) => e.stage))
   const currentStageIdx = Math.max(...(bid.timeline as any[]).map((e: any) => STAGE_ORDER.indexOf(e.stage)))
+  const linkedProject = (projects as any[]).find((project: any) => project.bid_id === bid.id)
 
   return (
     <div>
@@ -165,10 +166,13 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
         <div style={{ marginTop: "1.5rem", padding: "1.25rem 1.5rem", background: "var(--sage-light)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--sage)", marginBottom: "0.2rem" }}>This bid was won ✓</p>
-            <p style={{ fontSize: "12px", color: "var(--sage)" }}>View the active project — daily logs, costs, and progress.</p>
+            <p style={{ fontSize: "12px", color: "var(--sage)" }}>Ready to track this job? Create a project to log costs, daily reports, and progress.</p>
           </div>
-          <Link href="/projects" style={{ padding: "0.6rem 1.25rem", background: "var(--sage)", color: "white", borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none" }}>
-            Open Projects →
+          <Link
+            href={linkedProject ? `/projects/${linkedProject.id}` : '/projects/new'}
+            style={{ padding: "0.6rem 1.25rem", background: "var(--sage)", color: "white", borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none" }}
+          >
+            {linkedProject ? 'View Project →' : '+ Create Project'}
           </Link>
         </div>
       )}

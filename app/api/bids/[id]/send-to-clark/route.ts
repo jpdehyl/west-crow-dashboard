@@ -49,18 +49,46 @@ async function getTemporaryLink(path: string, token: string): Promise<string | n
   return data.link ?? null
 }
 
-async function listFolderRecursive(path: string, token: string): Promise<any[]> {
+function isDropboxSharedLink(value: string): boolean {
+  return /^https?:\/\/(www\.)?dropbox\.com\//i.test(value)
+}
+
+async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
+  const body = isDropboxSharedLink(pathOrLink)
+    ? { path: "", recursive: true, shared_link: { url: pathOrLink } }
+    : { path: pathOrLink, recursive: true }
+
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ path, recursive: true }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) return []
   const data = await res.json()
-  return data.entries ?? []
+
+  let entries = data.entries ?? []
+  let cursor = data.cursor
+
+  while (data.has_more && cursor) {
+    const nextRes = await fetch("https://api.dropboxapi.com/2/files/list_folder/continue", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cursor }),
+    })
+    if (!nextRes.ok) break
+    const nextData = await nextRes.json()
+    entries = entries.concat(nextData.entries ?? [])
+    cursor = nextData.cursor
+    if (!nextData.has_more) break
+  }
+
+  return entries
 }
 
 // ── File helpers ──────────────────────────────────────────────────────────────
@@ -237,7 +265,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const bid = await getBid(id) as any
   if (!bid) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const folder: string = bid.dropbox_folder || dropboxFolder || ""
+  const folder: string = dropboxFolder || bid.dropbox_folder || ""
 
   // Mark clark_working
   const existingEstimate = bid.estimate_data
@@ -276,7 +304,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         const subEntries = await listFolderRecursive(doc.url, token)
         for (const entry of subEntries) {
           if (entry[".tag"] === "file" && isSupported(entry.name)) {
-            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.path_display })
+            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
           }
         }
       } catch {
@@ -288,12 +316,12 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 
   // Fallback: list top-level folder
-  if (filesToAnalyze.length === 0 && folder && folder.startsWith("/")) {
+  if (filesToAnalyze.length === 0 && folder && (folder.startsWith("/") || isDropboxSharedLink(folder))) {
     try {
       const entries = await listFolderRecursive(folder, token)
       for (const entry of entries) {
         if (entry[".tag"] === "file" && isSupported(entry.name)) {
-          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.path_display })
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
         }
       }
     } catch {}

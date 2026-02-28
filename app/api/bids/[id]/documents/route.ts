@@ -31,6 +31,26 @@ async function getAccessToken(): Promise<string> {
   return t
 }
 
+function isDropboxSharedLink(value: string): boolean {
+  return /^https?:\/\/(www\.)?dropbox\.com\//i.test(value)
+}
+
+async function listDropboxFolder(pathOrLink: string, token: string): Promise<any[] | null> {
+  const body = isDropboxSharedLink(pathOrLink)
+    ? { path: '', recursive: false, shared_link: { url: pathOrLink } }
+    : { path: pathOrLink, recursive: false }
+
+  const res = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) return null
+  const data = await res.json()
+  return data.entries ?? []
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const bid = await getBid(id)
@@ -41,15 +61,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   try { token = await getAccessToken() }
   catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }) }
 
-  const res = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path: bid.dropbox_folder, recursive: false }),
-  })
-  if (!res.ok) return NextResponse.json({ error: 'Dropbox error' }, { status: 502 })
-  const data = await res.json()
+  const entries = await listDropboxFolder(bid.dropbox_folder, token)
+  if (!entries) return NextResponse.json({ error: 'Dropbox error' }, { status: 502 })
 
-  const documents = data.entries
+  const documents = entries
     .filter((e: any) => e['.tag'] === 'folder')
     .map((e: any) => ({ name: e.name, url: e.path_display, type: getDocType(e.name) }))
     .filter((d: any) => d.type !== null)

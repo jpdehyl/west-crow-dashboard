@@ -133,6 +133,11 @@ interface ClarkQuestionOutput {
   questions: ClarkQuestion[]
   assumptions: string[]
   line_items: { description: string; man_days: number | null; total: number }[]
+  subtrades: { phase_code: string; activity: string; qty: number; unit: string; unit_cost: number }[]
+  total_man_days: number
+  crew_size: number
+  crew_days: number
+  blended_rate: number
   preliminary_data: {
     line_items: { description: string; quantity: number; unit: string; notes: string }[]
   }
@@ -160,6 +165,14 @@ async function analyzeWithClaude(
       ``,
       `Analyze these demolition/construction documents. Extract what you can measure or confirm directly. For anything you cannot determine with confidence (floor finish type, partition wall LF, ceiling split ACT vs GWB, etc.), add it to a questions array.`,
       `Use the DeHyl formula for pricing: man_days = units / production_rate, labour = man_days × $296/day, total = labour × 1.42 (OH 12% + profit 30%).`,
+      `Also calculate subtrade quantities. Estimate waste by stream weight (e.g. flooring 2 lbs/SF, drywall 1 lb/SF, ceilings ~0.75 lbs/SF, masonry/concrete heavier).`,
+      `Waste-bin formula: total_weight_lbs = sum(all stream weights); total_MT = total_weight_lbs / 2204.6; bins = ceil(total_MT / 6).`,
+      `Set Waste Disposal 40YD Bins qty=bins and unit_cost=2800 (each 40YD bin holds 6 metric tons).`,
+      `Set Pickup Truck qty=total_man_days, unit=/day, unit_cost=90.`,
+      `Set Small Tools / Shop Consumables qty=total_man_days * 8, unit=/day, unit_cost=1.81.`,
+      `Set Project Manager Oversight qty=crew_days / 2, unit=EA, unit_cost=95.`,
+      `Set Waste Transport / Haul-out qty=1, unit=LS, unit_cost=450.`,
+      `Use crew_size=4, crew_days=total_man_days/crew_size, blended_rate=300.`,
       `If quantities are unknown, use 0 and explicitly flag the gap in assumptions.`,
       `Return ONLY valid JSON with shape:`,
       `{`,
@@ -173,6 +186,17 @@ async function analyzeWithClaude(
       `  }],`,
       `  "assumptions": ["assumption 1"],`,
       `  "line_items": [{"description": "Flooring (9500 SF)", "man_days": 33.55, "total": 16611}],`,
+      `  "subtrades": [`,
+      `    {"phase_code": "057050", "activity": "Waste Disposal 40YD Bins", "qty": 0, "unit": "LS", "unit_cost": 2800},`,
+      `    {"phase_code": "051030", "activity": "Pickup Truck", "qty": 0, "unit": "/day", "unit_cost": 90},`,
+      `    {"phase_code": "057050", "activity": "Small Tools / Shop Consumables", "qty": 0, "unit": "/day", "unit_cost": 1.81},`,
+      `    {"phase_code": "056400", "activity": "Project Manager Oversight", "qty": 0, "unit": "EA", "unit_cost": 95},`,
+      `    {"phase_code": "057050", "activity": "Waste Transport / Haul-out", "qty": 1, "unit": "LS", "unit_cost": 450}`,
+      `  ],`,
+      `  "total_man_days": 0,`,
+      `  "crew_size": 4,`,
+      `  "crew_days": 0,`,
+      `  "blended_rate": 300,`,
       `  "preliminary_data": {`,
       `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}]`,
       `  }`,
@@ -389,6 +413,11 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       questions: [],
       assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
       line_items: [],
+      subtrades: [],
+      total_man_days: 0,
+      crew_size: 4,
+      crew_days: 0,
+      blended_rate: 300,
       preliminary_data: {
         line_items: [],
       },

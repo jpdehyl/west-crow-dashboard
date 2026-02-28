@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const refreshToken = process.env.DROPBOX_REFRESH_TOKEN
-  const appKey = process.env.DROPBOX_APP_KEY
-  const appSecret = process.env.DROPBOX_APP_SECRET
+  const refreshToken = process.env.DROPBOX_REFRESH_TOKEN?.trim()
+  const appKey = process.env.DROPBOX_APP_KEY?.trim()
+  const appSecret = process.env.DROPBOX_APP_SECRET?.trim()
 
   let exchangeResult: any = null
   if (refreshToken && appKey && appSecret) {

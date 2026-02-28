@@ -294,8 +294,7 @@ export default function EstimateStatusButton({
     if (state === "no_quantities")                                   { setModal("missing"); return }
     if (state === "ready")                                           { setModal("start");   return }
     if (state === "clark_questions") {
-      const el = document.getElementById("clark-questions-card")
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+      router.push(`/bids/${bidId}/estimate`)
       return
     }
     if (state === "clark_draft" || state === "approved" || state === "view_only") {

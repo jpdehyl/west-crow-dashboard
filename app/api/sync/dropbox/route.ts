@@ -61,6 +61,15 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+function shortHash(input: string): string {
+  let hash = 5381
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash) + input.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash).toString(36)
+}
+
 async function dbxList(path: string, token: string) {
   const res = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
     method: 'POST',
@@ -100,6 +109,15 @@ export async function POST() {
   const folders = entries.filter((e: any) => e['.tag'] === 'folder')
   const existingBids = await getBids()
 
+  const slugToNames = new Map<string, Set<string>>()
+  for (const folder of folders) {
+    const slug = slugify(folder.name)
+    if (!slugToNames.has(slug)) slugToNames.set(slug, new Set())
+    slugToNames.get(slug)!.add(folder.name)
+  }
+
+  const isCollidingSlug = (slug: string) => (slugToNames.get(slug)?.size ?? 0) > 1
+
   const tasks = folders.map((folder: any) => async () => {
     const name: string = folder.name
     const path: string = folder.path_display
@@ -109,7 +127,13 @@ export async function POST() {
       return
     }
 
-    const id = slugify(name)
+    const baseSlug = slugify(name)
+    if (!baseSlug) {
+      console.warn(`[dropbox sync] Unexpected skip: invalid slug for folder ${name} (${path})`)
+      summary.skipped++
+      return
+    }
+    const id = isCollidingSlug(baseSlug) ? `${baseSlug}-${shortHash(name)}` : baseSlug
 
     let subEntries: any[] = []
     try {

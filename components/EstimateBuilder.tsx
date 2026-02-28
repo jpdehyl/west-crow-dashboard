@@ -266,6 +266,7 @@ function ApprovedPanel({
 }
 
 type ClarkPricedLineItem = { description: string; man_days: number | null; total: number }
+type ClarkSubtradePrefill = { phase_code: string; activity: string; qty: number; unit: string; unit_cost: number }
 
 export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUrl }: { bidId: string; bidName: string; saved: any; estimateSheetUrl?: string | null }) {
   const router = useRouter()
@@ -296,7 +297,26 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
     })
   })
   const [subtrades, setSubtrades] = useState<SubtradeItem[]>(() => {
-    if (!saved?.subtrades) return DEFAULT_SUBTRADES
+    const clarkSubtradePrefill: ClarkSubtradePrefill[] = [
+      ...(Array.isArray(saved?.clark_draft?.subtrades) ? saved.clark_draft.subtrades : []),
+      ...(Array.isArray(saved?.clark_questions?.subtrades) ? saved.clark_questions.subtrades : []),
+    ]
+
+    if (!saved?.subtrades) {
+      return DEFAULT_SUBTRADES.map((def) => {
+        const prefill = clarkSubtradePrefill.find((sub) =>
+          sub.phase_code === def.phase_code
+          && sub.activity?.trim().toLowerCase() === def.description.trim().toLowerCase()
+        )
+        if (!prefill) return def
+        return {
+          ...def,
+          units: Number(prefill.qty) || 0,
+          unit_cost: Number(prefill.unit_cost) || def.unit_cost,
+        }
+      })
+    }
+
     return DEFAULT_SUBTRADES.map(def => {
       const s = saved.subtrades?.find((x: any) => x.id === def.id)
       return s ? { ...def, units: Number(s.units) || 0, unit_cost: Number(s.unit_cost) || def.unit_cost, active: s.active !== false, notes: s.notes || "" } : def
@@ -309,6 +329,12 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
     : []
   const recommendedRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("TOTAL RECOMMENDED BID"))
   const labourScopeRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("LABOUR SCOPE TOTAL"))
+  const summarySource = saved?.clark_draft ?? saved?.clark_questions ?? {}
+  const summaryCrewSize = Number(summarySource.crew_size) || 4
+  const summaryCrewDays = Number(summarySource.crew_days) || 0
+  const summaryBlendedRate = Number(summarySource.blended_rate) || 300
+  const summaryManDays = typeof labourScopeRow?.man_days === "number" ? labourScopeRow.man_days : Number(summarySource.total_man_days) || 0
+  const summaryLabourTotal = typeof labourScopeRow?.total === "number" ? labourScopeRow.total : 0
   const recommendedTotal = typeof recommendedRow?.total === "number" ? recommendedRow.total : null
 
   const dfTotal = deHylForces(sections, cfg)
@@ -450,6 +476,48 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
           />
         </div>
       )}
+
+      <div style={{ marginBottom: "1rem", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", background: "var(--bg-subtle)" }}>
+        <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid var(--border)", fontSize: "12px", fontWeight: 600, color: "var(--ink)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          Estimate Summary
+        </div>
+        <div style={{ padding: "0.6rem 1rem" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+            <tbody>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0 }}>Labour Scope Total</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}>{dec(summaryManDays)} man-days</td>
+                <td style={{ ...numCell, borderBottom: "none", color: "var(--ink)" }}>{$(summaryLabourTotal)}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0 }}>Subtrades (with {cfg.subtrade_markup}% markup)</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}>—</td>
+                <td style={{ ...numCell, borderBottom: "none", color: "var(--ink)" }}>{$(stTotal)}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Total Recommended Bid</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}></td>
+                <td style={{ ...numCell, borderBottom: "none", color: "var(--terra)", fontWeight: 700 }}>{$(displayTotal)}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0 }}>Crew Size</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}>{summaryCrewSize} workers</td>
+                <td style={{ ...numCell, borderBottom: "none" }}></td>
+              </tr>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0 }}>Crew Days</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}>{dec(summaryCrewDays)} days</td>
+                <td style={{ ...numCell, borderBottom: "none" }}></td>
+              </tr>
+              <tr>
+                <td style={{ ...cell, borderBottom: "none", paddingLeft: 0 }}>Blended Rate</td>
+                <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}>${summaryBlendedRate}/day</td>
+                <td style={{ ...numCell, borderBottom: "none" }}></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
 
       {/* ── Clark Summary Table ── */}

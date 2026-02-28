@@ -133,6 +133,11 @@ interface ClarkQuestionOutput {
   questions: ClarkQuestion[]
   assumptions: string[]
   line_items: { description: string; man_days: number | null; total: number }[]
+  subtrades?: { phase_code: string; activity: string; qty: number; unit: string; unit_cost: number }[]
+  total_man_days?: number
+  crew_size?: number
+  crew_days?: number
+  blended_rate?: number
   preliminary_data: {
     line_items: { description: string; quantity: number; unit: string; notes: string }[]
   }
@@ -161,6 +166,14 @@ async function analyzeWithClaude(
       `Analyze these demolition/construction documents. Extract what you can measure or confirm directly. For anything you cannot determine with confidence (floor finish type, partition wall LF, ceiling split ACT vs GWB, etc.), add it to a questions array.`,
       `Use the DeHyl formula for pricing: man_days = units / production_rate, labour = man_days × $296/day, total = labour × 1.42 (OH 12% + profit 30%).`,
       `If quantities are unknown, use 0 and explicitly flag the gap in assumptions.`,
+      `Estimate waste bin quantity using this exact formula: estimate total weight of each waste stream in lbs (ex: flooring 2 lbs/SF, drywall 1 lb/SF, and reasonable rates for other streams), sum all lbs, convert to metric tons with total_MT = total_lbs / 2204.6, then bins = ceil(total_MT / 6). Each 40YD bin = 6 MT and costs $2,800 per bin.`,
+      `Include a subtrades array with calculated qty values. Use the fixed rates and formulas below:`,
+      `- Waste Disposal 40YD Bins: qty = bins (from formula above), unit_cost = 2800`,
+      `- Pickup Truck: qty = total_man_days, unit_cost = 90`,
+      `- Small Tools / Shop Consumables: qty = total_man_days * 8, unit_cost = 1.81`,
+      `- Project Manager Oversight: qty = crew_days / 2, unit_cost = 95`,
+      `- Waste Transport / Haul-out: qty = 1, unit_cost = 450`,
+      `Use crew_size = 4, crew_days = total_man_days / crew_size, blended_rate = 300.`,
       `Return ONLY valid JSON with shape:`,
       `{`,
       `  "scope_summary": "string",`,
@@ -173,6 +186,17 @@ async function analyzeWithClaude(
       `  }],`,
       `  "assumptions": ["assumption 1"],`,
       `  "line_items": [{"description": "Flooring (9500 SF)", "man_days": 33.55, "total": 16611}],`,
+      `  "subtrades": [`,
+      `    {"phase_code": "057050", "activity": "Waste Disposal 40YD Bins", "qty": 0, "unit": "LS", "unit_cost": 2800},`,
+      `    {"phase_code": "051030", "activity": "Pickup Truck", "qty": 0, "unit": "/day", "unit_cost": 90},`,
+      `    {"phase_code": "057050", "activity": "Small Tools / Shop Consumables", "qty": 0, "unit": "/day", "unit_cost": 1.81},`,
+      `    {"phase_code": "056400", "activity": "Project Manager Oversight", "qty": 0, "unit": "EA", "unit_cost": 95},`,
+      `    {"phase_code": "057050", "activity": "Waste Transport / Haul-out", "qty": 1, "unit": "LS", "unit_cost": 450}`,
+      `  ],`,
+      `  "total_man_days": 0,`,
+      `  "crew_size": 4,`,
+      `  "crew_days": 0,`,
+      `  "blended_rate": 300,`,
       `  "preliminary_data": {`,
       `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}]`,
       `  }`,
@@ -389,6 +413,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       questions: [],
       assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
       line_items: [],
+      subtrades: [],
       preliminary_data: {
         line_items: [],
       },
@@ -406,7 +431,18 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const estimateData = {
     config:      DEFAULT_CONFIG,
     sections: DEFAULT_SECTIONS,
-    subtrades:   DEFAULT_SUBTRADES,
+    subtrades: DEFAULT_SUBTRADES.map((def) => {
+      const matched = clarkOutput.subtrades?.find((sub) =>
+        sub.phase_code === def.phase_code
+        && sub.activity.trim().toLowerCase() === def.description.trim().toLowerCase()
+      )
+      if (!matched) return def
+      return {
+        ...def,
+        units: Number(matched.qty) || 0,
+        unit_cost: Number(matched.unit_cost) || def.unit_cost,
+      }
+    }),
     meta,
     clark_questions: clarkOutput,
     grand_total: 0,

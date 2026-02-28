@@ -74,10 +74,202 @@ const inputStyle: React.CSSProperties = {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+
+// ── ApprovedPanel ─────────────────────────────────────────────────────────────
+
+interface DraftResult {
+  draft_id: string
+  gmail_url: string
+  scheduled_for: string | null
+  to: string | null
+  no_gc_email: boolean
+  subject: string
+  email_preview: string
+}
+
+function ApprovedPanel({
+  bidId, grandTotal, estimateNumber, meta, setMeta
+}: {
+  bidId: string
+  grandTotal: number
+  estimateNumber: string
+  meta: EstimateMeta
+  setMeta: (fn: (m: EstimateMeta) => EstimateMeta) => void
+}) {
+  const [uploading, setUploading]     = useState(false)
+  const [uploadResult, setUploadResult] = useState<{ path: string; filename: string } | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [drafting, setDrafting]       = useState(false)
+  const [draftResult, setDraftResult] = useState<DraftResult | null>(null)
+  const [draftError, setDraftError]   = useState<string | null>(null)
+
+  const fmtTotal = new Intl.NumberFormat("en-CA", {
+    style: "currency", currency: "CAD", minimumFractionDigits: 2,
+  }).format(grandTotal)
+
+  function handleDownload() {
+    window.open(`/api/bids/${bidId}/proposal`, "_blank")
+  }
+
+  async function handleUpload() {
+    setUploading(true)
+    setUploadError(null)
+    setUploadResult(null)
+    setDraftResult(null)
+    try {
+      const res = await fetch(`/api/bids/${bidId}/proposal/upload`, { method: "POST" })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error ?? "Upload failed")
+      setUploadResult({ path: json.dropbox_path, filename: json.filename })
+    } catch (e: any) {
+      setUploadError(e.message ?? "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleDraftEmail() {
+    setDrafting(true)
+    setDraftError(null)
+    setDraftResult(null)
+    try {
+      const res = await fetch(`/api/bids/${bidId}/draft-email`, { method: "POST" })
+      const json = await res.json()
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Draft creation failed")
+      setDraftResult(json)
+    } catch (e: any) {
+      setDraftError(e.message ?? "Draft creation failed")
+    } finally {
+      setDrafting(false)
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: "1.25rem" }}>
+      {/* Approved status bar */}
+      <div style={{ padding: "0.85rem 1.25rem", background: "#f0faf4", border: "1px solid #3d8c5c", borderRadius: "10px 10px 0 0", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <span style={{ color: "#3d8c5c", fontSize: "1.1rem" }}>✓</span>
+        <p style={{ fontSize: "13px", fontWeight: 500, color: "#3d8c5c", flex: 1 }}>
+          Approved by JP{meta.approved_at ? ` · ${new Date(meta.approved_at).toLocaleDateString("en-CA")}` : ""} — Ready to send
+          {estimateNumber && <span style={{ marginLeft: "0.5rem", fontSize: "12px", color: "#3d8c5c", fontWeight: 400 }}>· {estimateNumber}</span>}
+        </p>
+        <button
+          onClick={() => setMeta(m => ({ ...m, status: "clark_draft" }))}
+          style={{ fontSize: "12px", color: "#3d8c5c", background: "none", border: "1px solid #3d8c5c", borderRadius: "6px", padding: "0.3rem 0.75rem", cursor: "pointer", fontFamily: "inherit" }}>
+          Reopen
+        </button>
+      </div>
+
+      {/* Proposal actions panel */}
+      <div style={{ padding: "1rem 1.25rem", background: "#fafffe", border: "1px solid #3d8c5c", borderTop: "none", borderRadius: "0 0 10px 10px" }}>
+        <p style={{ fontSize: "11px", fontWeight: 600, color: "#3d8c5c", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
+          📄 Proposal Actions
+        </p>
+
+        {/* Step 1: Download + Upload */}
+        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+          <button
+            onClick={handleDownload}
+            style={{ padding: "0.55rem 1.1rem", background: "#2d2d2d", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+            📄 Download Proposal PDF
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={uploading}
+            style={{ padding: "0.55rem 1.1rem", background: uploading ? "#aaa" : "#1d6fa5", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 500, cursor: uploading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: uploading ? 0.7 : 1 }}>
+            {uploading ? "Uploading…" : "☁️ Upload to Dropbox"}
+          </button>
+        </div>
+
+        {/* Upload feedback */}
+        {uploadError && (
+          <div style={{ marginBottom: "0.75rem", padding: "0.6rem 0.85rem", background: "#fff5f5", border: "1px solid #f87171", borderRadius: "7px", fontSize: "12px", color: "#b91c1c" }}>
+            ⚠️ {uploadError}
+          </div>
+        )}
+
+        {uploadResult && (
+          <div style={{ marginBottom: "0.75rem" }}>
+            <div style={{ padding: "0.6rem 0.85rem", background: "#f0faf4", border: "1px solid #6ee7b7", borderRadius: "7px", fontSize: "12px", color: "#065f46", marginBottom: "0.6rem" }}>
+              ✓ Saved to Dropbox: <span style={{ fontFamily: "monospace", fontSize: "11px" }}>{uploadResult.path}</span>
+            </div>
+
+            {/* Step 2: Draft email via Clark */}
+            <div style={{ padding: "0.85rem 1rem", background: "#f8f4ff", border: "1px solid #a78bfa", borderRadius: "8px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 600, color: "#6d28d9", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>
+                ✉️ Email to GC
+              </p>
+              <p style={{ fontSize: "12px", color: "#5b21b6", marginBottom: "0.75rem", lineHeight: 1.5 }}>
+                Clark will write the email, attach the PDF, and create a Gmail draft — ready for your review.
+              </p>
+              <button
+                onClick={handleDraftEmail}
+                disabled={drafting}
+                style={{ padding: "0.6rem 1.2rem", background: drafting ? "#aaa" : "#7c3aed", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 600, cursor: drafting ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                {drafting ? (
+                  <>
+                    <span style={{ display: "inline-block", width: "12px", height: "12px", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    Clark is drafting the email…
+                  </>
+                ) : "✉️ Send to GC via Clark"}
+              </button>
+
+              {/* Draft error */}
+              {draftError && (
+                <div style={{ marginTop: "0.6rem", padding: "0.6rem 0.85rem", background: "#fff5f5", border: "1px solid #f87171", borderRadius: "7px", fontSize: "12px", color: "#b91c1c" }}>
+                  ⚠️ {draftError}
+                </div>
+              )}
+
+              {/* Draft success */}
+              {draftResult && (
+                <div style={{ marginTop: "0.75rem" }}>
+                  <div style={{ padding: "0.75rem 1rem", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "7px" }}>
+                    <p style={{ fontSize: "12px", fontWeight: 600, color: "#14532d", marginBottom: "0.3rem" }}>
+                      ✅ {draftResult.scheduled_for
+                        ? `Scheduled for ${new Date(draftResult.scheduled_for).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                        : "Gmail draft created"}
+                    </p>
+                    {draftResult.no_gc_email && (
+                      <p style={{ fontSize: "11px", color: "#b45309", marginBottom: "0.3rem" }}>
+                        ⚠️ No GC email on file — draft has empty To: field. Add gc_email to the bid.
+                      </p>
+                    )}
+                    {draftResult.to && (
+                      <p style={{ fontSize: "11px", color: "#166534", marginBottom: "0.3rem" }}>
+                        To: {draftResult.to}
+                      </p>
+                    )}
+                    <p style={{ fontSize: "11px", color: "#166534", marginBottom: "0.5rem", fontStyle: "italic" }}>
+                      {draftResult.email_preview?.slice(0, 120)}…
+                    </p>
+                    <a
+                      href={draftResult.gmail_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: "inline-block", padding: "0.4rem 0.9rem", background: "#1a73e8", color: "#fff", borderRadius: "6px", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>
+                      → Open in Gmail
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  )
+}
+
 export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: string; bidName: string; saved: any }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [estimateNumber, setEstimateNumber] = useState<string | null>(saved?.estimate_number ?? null)
   const [cfg, setCfg] = useState<EstimateConfig>(saved?.config ?? DEFAULT_CONFIG)
   const [sections, setSections] = useState<Section[]>(() => {
     if (!saved?.sections) return DEFAULT_SECTIONS
@@ -139,11 +331,13 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
   async function handleSave() {
     setSaving(true)
     try {
-      await fetch(`/api/bids/${bidId}/estimate`, {
+      const res = await fetch(`/api/bids/${bidId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config: cfg, sections, subtrades, meta, grand_total: gt }),
       })
+      const json = await res.json()
+      if (json.estimate_number) setEstimateNumber(json.estimate_number)
       router.refresh()
     } finally {
       setSaving(false)
@@ -231,17 +425,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
         </div>
       )}
       {meta.status === "approved" && (
-        <div style={{ marginBottom: "1.25rem", padding: "0.85rem 1.25rem", background: "#f0faf4", border: "1px solid #3d8c5c", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <span style={{ color: "#3d8c5c", fontSize: "1.1rem" }}>✓</span>
-          <p style={{ fontSize: "13px", fontWeight: 500, color: "#3d8c5c" }}>
-            Approved by JP{meta.approved_at ? ` · ${new Date(meta.approved_at).toLocaleDateString("en-CA")}` : ""} — Ready for BuilderTrend
-          </p>
-          <button
-            onClick={() => setMeta(m => ({ ...m, status: "clark_draft" }))}
-            style={{ marginLeft: "auto", fontSize: "12px", color: "#3d8c5c", background: "none", border: "1px solid #3d8c5c", borderRadius: "6px", padding: "0.3rem 0.75rem", cursor: "pointer", fontFamily: "inherit" }}>
-            Reopen
-          </button>
-        </div>
+        <ApprovedPanel bidId={bidId} grandTotal={gt} estimateNumber={estimateNumber ?? ""} meta={meta} setMeta={setMeta} />
       )}
 
       {/* ── Clark Notes ── */}

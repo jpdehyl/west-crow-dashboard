@@ -100,11 +100,14 @@ export async function POST() {
   const folders = entries.filter((e: any) => e['.tag'] === 'folder')
   const existingBids = await getBids()
 
-  for (const folder of folders) {
+  const tasks = folders.map((folder: any) => async () => {
     const name: string = folder.name
     const path: string = folder.path_display
 
-    if (isSkipped(name)) { summary.skipped++; continue }
+    if (isSkipped(name)) {
+      summary.skipped++
+      return
+    }
 
     const id = slugify(name)
 
@@ -134,10 +137,17 @@ export async function POST() {
         timeline: [],
       })
       summary.created++
-    } else {
-      await updateBid(id, { documents, dropbox_folder: path })
-      summary.updated++
+      return
     }
+
+    await updateBid(id, { documents, dropbox_folder: path })
+    summary.updated++
+  })
+
+  const CHUNK_SIZE = 20
+  for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
+    const chunk = tasks.slice(i, i + CHUNK_SIZE)
+    await Promise.all(chunk.map((task) => task()))
   }
 
   return NextResponse.json(summary)

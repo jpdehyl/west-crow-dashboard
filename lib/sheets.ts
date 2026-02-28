@@ -3,18 +3,26 @@
 
 import { supabase } from './supabase'
 
+function normalizeBidRow(row: any) {
+  return {
+    ...row,
+    project_name: row?.project_name ?? row?.projectName ?? row?.name ?? '',
+    client: row?.client ?? row?.client_name ?? row?.clientName ?? '',
+  }
+}
+
 // ── Bids ─────────────────────────────────────────────────────────────────────
 
 export async function getBids() {
   const { data, error } = await supabase.from('bids').select('*').order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
-  return data ?? []
+  return (data ?? []).map(normalizeBidRow)
 }
 
 export async function getBid(id: string) {
   const { data, error } = await supabase.from('bids').select('*').eq('id', id).single()
   if (error) return null
-  return data
+  return normalizeBidRow(data)
 }
 
 export async function createBid(data: object) {

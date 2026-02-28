@@ -31,8 +31,9 @@ async function getAccessToken(): Promise<string> {
   return t
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const bid = await getBid(params.id)
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const bid = await getBid(id)
   if (!bid) return NextResponse.json({ error: 'Bid not found' }, { status: 404 })
   if (!bid.dropbox_folder) return NextResponse.json({ documents: [] })
 
@@ -54,7 +55,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .filter((d: any) => d.type !== null)
 
   // Cache in Supabase
-  await updateBid(params.id, { documents })
+  await updateBid(id, { documents })
 
   return NextResponse.json({ documents })
 }

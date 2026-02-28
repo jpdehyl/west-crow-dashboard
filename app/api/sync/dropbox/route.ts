@@ -19,16 +19,11 @@ async function getAccessToken(): Promise<string> {
     const res = await fetch('https://api.dropbox.com/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: appKey,
-        client_secret: appSecret,
-      }),
+      body: `grant_type=refresh_token&refresh_token=${refreshToken}&client_id=${appKey}&client_secret=${appSecret}`,
     })
     if (res.ok) {
       const data = await res.json()
-      return data.access_token
+      if (data.access_token) return data.access_token
     }
   }
 

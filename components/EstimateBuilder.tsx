@@ -265,7 +265,9 @@ function ApprovedPanel({
   )
 }
 
-export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: string; bidName: string; saved: any }) {
+type ClarkPricedLineItem = { description: string; man_days: number | null; total: number }
+
+export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUrl }: { bidId: string; bidName: string; saved: any; estimateSheetUrl?: string | null }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [applying, setApplying] = useState(false)
@@ -306,6 +308,11 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
   const stTotal = subtradesTotal(subtrades, cfg.subtrade_markup)
   const gt      = dfTotal + stTotal
 
+  const clarkLineItems: ClarkPricedLineItem[] = Array.isArray(saved?.clark_draft?.line_items) ? saved.clark_draft.line_items : []
+  const totalRecommendedBid = clarkLineItems.find((item) => item.description?.toUpperCase().includes("TOTAL RECOMMENDED BID"))?.total ?? 0
+  const appliedBidValue = totalRecommendedBid > 0 ? totalRecommendedBid : gt
+
+
   function updateItem(secId: string, itemId: string, field: string, value: any) {
     setSections(prev => prev.map(s =>
       s.id !== secId ? s : {
@@ -334,7 +341,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       const res = await fetch(`/api/bids/${bidId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg, sections, subtrades, meta, grand_total: gt }),
+        body: JSON.stringify({ config: cfg, sections, subtrades, meta, grand_total: appliedBidValue }),
       })
       const json = await res.json()
       if (json.estimate_number) setEstimateNumber(json.estimate_number)
@@ -358,7 +365,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       await fetch(`/api/bids/${bidId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg, sections, subtrades, meta: approved, grand_total: gt }),
+        body: JSON.stringify({ config: cfg, sections, subtrades, meta: approved, grand_total: appliedBidValue }),
       })
     } finally {
       setSaving(false)
@@ -374,7 +381,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
       await fetch(`/api/bids/${bidId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bid_value: Math.round(gt) }),
+        body: JSON.stringify({ bid_value: Math.round(appliedBidValue) }),
       })
       router.push(`/bids/${bidId}`)
     } finally {
@@ -395,8 +402,8 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
           <button onClick={handleSave} disabled={saving} style={{ padding: "0.55rem 1.1rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "7px", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
             {saving ? "Saving…" : "Save"}
           </button>
-          <button onClick={handleApply} disabled={applying || gt === 0} style={{ padding: "0.55rem 1.25rem", background: "var(--ink)", color: "var(--bg)", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 600, cursor: applying || gt === 0 ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: applying || gt === 0 ? 0.6 : 1 }}>
-            {applying ? "Applying…" : `Apply ${$(gt)} → Bid Value`}
+          <button onClick={handleApply} disabled={applying || appliedBidValue === 0} style={{ padding: "0.55rem 1.25rem", background: "var(--ink)", color: "var(--bg)", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 600, cursor: applying || appliedBidValue === 0 ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: applying || appliedBidValue === 0 ? 0.6 : 1 }}>
+            {applying ? "Applying…" : `Apply ${$(appliedBidValue)} → Bid Value`}
           </button>
         </div>
       </div>
@@ -425,7 +432,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
         </div>
       )}
       {meta.status === "approved" && (
-        <ApprovedPanel bidId={bidId} grandTotal={gt} estimateNumber={estimateNumber ?? ""} meta={meta} setMeta={setMeta} />
+        <ApprovedPanel bidId={bidId} grandTotal={appliedBidValue} estimateNumber={estimateNumber ?? ""} meta={meta} setMeta={setMeta} />
       )}
 
       {/* ── Clark Notes ── */}
@@ -438,6 +445,42 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
             placeholder="Clark will fill this in — scope summary, key risks, anything JP should know before reviewing…"
             style={{ width: "100%", minHeight: "64px", padding: "0.6rem 0.75rem", fontSize: "13px", fontFamily: "inherit", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "7px", color: "var(--ink)", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
           />
+        </div>
+      )}
+
+      {clarkLineItems.length > 0 && (
+        <div style={{ marginBottom: "1.25rem", padding: "1rem 1.25rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Priced Summary</p>
+            {estimateSheetUrl && (
+              <a href={estimateSheetUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#1a73e8", textDecoration: "none", fontWeight: 600 }}>
+                📊 Open in Google Sheets
+              </a>
+            )}
+          </div>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+            <thead>
+              <tr>
+                <th style={{ ...cell, textAlign: "left", fontSize: "10px", textTransform: "uppercase", color: "var(--ink-faint)" }}>Description</th>
+                <th style={{ ...numCell, fontSize: "10px", textTransform: "uppercase", color: "var(--ink-faint)" }}>Man-Days</th>
+                <th style={{ ...numCell, fontSize: "10px", textTransform: "uppercase", color: "var(--ink-faint)" }}>Total $</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clarkLineItems.map((item, idx) => {
+                const isGrand = item.description?.toUpperCase().includes("TOTAL RECOMMENDED BID")
+                const isLabour = item.description?.toUpperCase().includes("LABOUR SCOPE TOTAL")
+                const emphasize = isGrand || isLabour
+                return (
+                  <tr key={`${item.description}-${idx}`}>
+                    <td style={{ ...cell, color: "var(--ink)" }}>{item.description}</td>
+                    <td style={numCell}>{item.man_days === null ? "" : dec(item.man_days)}</td>
+                    <td style={{ ...numCell, fontWeight: emphasize ? 700 : 500, color: emphasize ? "var(--ink)" : "var(--ink-muted)" }}>{$(item.total)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -763,7 +806,7 @@ export default function EstimateBuilder({ bidId, bidName, saved }: { bidId: stri
         </div>
         {gt > 0 && (
           <button onClick={handleApply} disabled={applying} style={{ padding: "0.75rem 1.5rem", background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "9px", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", backdropFilter: "blur(4px)" }}>
-            {applying ? "Applying…" : "Apply to Bid →"}
+            {applying ? "Applying…" : `Apply ${$(appliedBidValue)} to Bid →`}
           </button>
         )}
       </div>

@@ -131,10 +131,8 @@ interface ClarkQuestion {
 interface ClarkQuestionOutput {
   scope_summary: string
   questions: ClarkQuestion[]
-  preliminary_data: {
-    line_items: { description: string; quantity: number; unit: string; notes: string }[]
-    assumptions: string[]
-  }
+  assumptions: string[]
+  line_items: { description: string; man_days: number | null; total: number }[]
 }
 
 
@@ -160,6 +158,9 @@ async function analyzeWithClaude(
       extraNote ? `JP's note: ${extraNote}` : null,
       ``,
       `Analyze these demolition/construction documents. Extract what you can measure or confirm directly. For anything you cannot determine with confidence (floor finish type, partition wall LF, ceiling split ACT vs GWB, etc.), add it to a questions array.`,
+      `Also provide an initial priced summary table using DeHyl pricing rules from the knowledge base.`,
+      `Use this formula exactly: man_days = units / production_rate, labour = man_days × 296, total = labour × 1.42 (OH 12% + profit 30%).`,
+      `If quantities are unknown, use 0 for units and add a clear note in assumptions.`,
       `Return ONLY valid JSON with shape:`,
       `{`,
       `  "scope_summary": "string",`,
@@ -170,10 +171,14 @@ async function analyzeWithClaude(
       `    "type": "text|number|choice",`,
       `    "choices": ["string"]`,
       `  }],`,
-      `  "preliminary_data": {`,
-      `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
-      `    "assumptions": ["assumption 1"]`,
-      `  }`,
+      `  "assumptions": ["assumption 1"],`,
+      `  "line_items": [`,
+      `    {"description": "Flooring (9500 SF)", "man_days": 33.55, "total": 16611},`,
+      `    {"description": "ACT Ceiling (6000 SF)", "man_days": 10.71, "total": 5282},`,
+      `    {"description": "Labour Scope Total", "man_days": 63.50, "total": 31288},`,
+      `    {"description": "Subtrades (bins + dump, 20% markup)", "man_days": null, "total": 18000},`,
+      `    {"description": "TOTAL RECOMMENDED BID", "man_days": null, "total": 49288}`,
+      `  ]`,
       `}`,
     ].filter(Boolean).join("\n"),
   })
@@ -385,10 +390,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     clarkOutput = {
       scope_summary: "No documents available for analysis. Please attach bid documents and re-send to Clark.",
       questions: [],
-      preliminary_data: {
-        line_items: [],
-        assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
-      },
+      line_items: [],
+      assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
     }
   }
 

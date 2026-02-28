@@ -1,11 +1,13 @@
 // POST /api/bids/[id]/send-to-clark
 // Clark reads Dropbox documents and pre-fills the estimate builder.
-// Flow: Dropbox token → download docs → Claude analysis → store clark_draft
+// Flow: Dropbox token → download docs → Claude analysis → store clark_questions
 
 import { NextRequest, NextResponse } from "next/server"
 import { getBid, updateBid, addBidTimeline } from "@/lib/sheets"
 import { DEFAULT_SECTIONS, DEFAULT_SUBTRADES, DEFAULT_CONFIG } from "@/lib/estimate-data"
-import type { Section, EstimateMeta } from "@/lib/estimate-data"
+import type { EstimateMeta } from "@/lib/estimate-data"
+import { promises as fs } from "fs"
+import path from "path"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
@@ -118,22 +120,34 @@ function isSupported(filename: string): boolean {
 
 // ── Clark analysis ────────────────────────────────────────────────────────────
 
-interface ClarkOutput {
-  scope_summary:  string
-  line_items:     { description: string; quantity: number; unit: string; notes: string }[]
-  assumptions:    string[]
-  exclusions:     string[]
-  hazmat_present: boolean
-  confidence:     number
+interface ClarkQuestion {
+  id: string
+  question: string
+  context: string
+  type: "text" | "number" | "choice"
+  choices?: string[]
 }
+
+interface ClarkQuestionOutput {
+  scope_summary: string
+  questions: ClarkQuestion[]
+  preliminary_data: {
+    line_items: { description: string; quantity: number; unit: string; notes: string }[]
+    assumptions: string[]
+  }
+}
+
+
 
 async function analyzeWithClaude(
   docPayloads: { filename: string; mediaType: string; base64: string }[],
   bidName: string,
   extraNote: string
-): Promise<ClarkOutput> {
+): Promise<ClarkQuestionOutput> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured")
+
+  const knowledge = await loadClarkKnowledge()
 
   const contentBlocks: any[] = []
 
@@ -141,20 +155,25 @@ async function analyzeWithClaude(
     type: "text",
     text: [
       `You are Clark, an expert construction estimator's assistant for West Crow Contracting.`,
-      `Analyze the following documents for bid: "${bidName}".`,
+      knowledge ? `Clark system context (West Crow methodology):\n${knowledge}` : null,
+      `Analyze these demolition/construction documents for bid: "${bidName}".`,
       extraNote ? `JP's note: ${extraNote}` : null,
       ``,
-      `West Crow specializes in demolition, selective demo, hazmat abatement (ACM/LBP), and concrete work.`,
-      `Labour rate: $296/man-day. Materials: 18% of labour. Overhead: 12%. Profit: 30%.`,
-      ``,
-      `Extract scope and quantities. Return ONLY a valid JSON object (no markdown, no explanation):`,
+      `Analyze these demolition/construction documents. Extract what you can measure or confirm directly. For anything you cannot determine with confidence (floor finish type, partition wall LF, ceiling split ACT vs GWB, etc.), add it to a questions array.`,
+      `Return ONLY valid JSON with shape:`,
       `{`,
-      `  "scope_summary": "Brief scope description",`,
-      `  "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
-      `  "assumptions": ["assumption 1", ...],`,
-      `  "exclusions": ["exclusion 1", ...],`,
-      `  "hazmat_present": true|false,`,
-      `  "confidence": 0.0-1.0`,
+      `  "scope_summary": "string",`,
+      `  "questions": [{`,
+      `    "id": "string",`,
+      `    "question": "string",`,
+      `    "context": "string",`,
+      `    "type": "text|number|choice",`,
+      `    "choices": ["string"]`,
+      `  }],`,
+      `  "preliminary_data": {`,
+      `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
+      `    "assumptions": ["assumption 1"]`,
+      `  }`,
       `}`,
     ].filter(Boolean).join("\n"),
   })
@@ -208,51 +227,30 @@ async function analyzeWithClaude(
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error("Clark returned invalid JSON")
 
-  return JSON.parse(jsonMatch[0]) as ClarkOutput
+  return JSON.parse(jsonMatch[0]) as ClarkQuestionOutput
 }
 
-// ── Map Clark output → estimate sections ──────────────────────────────────────
+async function loadClarkKnowledge(): Promise<string> {
+  const repoPath = path.join(process.cwd(), "skills/clark/CLARK_WESTCROW.md")
+  const homePath = path.join(process.env.HOME ?? "", ".openclaw/workspace/skills/clark/CLARK_WESTCROW.md")
+  const fallbackPath = path.join(process.cwd(), "lib/clark-knowledge.md")
 
-const KEYWORD_MAP: { keywords: string[]; sectionId: string; itemId?: string }[] = [
-  { keywords: ["vft", "vinyl", "floor tile", "mastic", "floor covering", "vct"], sectionId: "vft_mastic" },
-  { keywords: ["drywall", "plaster", "ceiling tile", "t-bar", "t bar", "suspended ceiling", "lay-in"], sectionId: "drywall_ceiling" },
-  { keywords: ["acm pipe", "pipe insulation", "boiler", "hvac insulation", "mechanical insulation"], sectionId: "acm_pipe" },
-  { keywords: ["spray", "tsac", "fireproofing", "transite"], sectionId: "spray_tsac" },
-  { keywords: ["concrete", "slab", "topping", "grinding", "shot blast", "scarify"], sectionId: "concrete_topping" },
-  { keywords: ["brick", "masonry", "block", "cmu"], sectionId: "masonry" },
-  { keywords: ["structural", "heavy demo", "selective demo"], sectionId: "structural_demo" },
-  { keywords: ["mobilization", "mob", "setup", "site setup"], sectionId: "mob", itemId: "mob" },
-  { keywords: ["demobilization", "demob", "cleanup"], sectionId: "mob", itemId: "demob" },
-  { keywords: ["debris", "waste", "hauling", "disposal", "bin", "truck"], sectionId: "waste" },
-]
+  try {
+    return await fs.readFile(repoPath, "utf-8")
+  } catch {}
 
-function mapLineItemsToSections(
-  lineItems: ClarkOutput["line_items"],
-  defaultSections: Section[]
-): Section[] {
-  const sections = JSON.parse(JSON.stringify(defaultSections)) as Section[]
+  try {
+    const homeContent = await fs.readFile(homePath, "utf-8")
+    await fs.mkdir(path.dirname(fallbackPath), { recursive: true })
+    await fs.writeFile(fallbackPath, homeContent, "utf-8")
+    return homeContent
+  } catch {}
 
-  for (const item of lineItems) {
-    const desc  = item.description.toLowerCase()
-    const match = KEYWORD_MAP.find(m => m.keywords.some(k => desc.includes(k)))
-    if (!match) continue
-
-    const sec = sections.find(s => s.id === match.sectionId)
-    if (!sec) continue
-
-    const targetItem = match.itemId
-      ? sec.items.find(i => i.id === match.itemId)
-      : sec.items[0]
-
-    if (!targetItem) continue
-
-    if (item.quantity > 0) targetItem.units = item.quantity
-    targetItem.active   = true
-    if (item.notes)    targetItem.notes = item.notes
-    sec.expanded = true
+  try {
+    return await fs.readFile(fallbackPath, "utf-8")
+  } catch {
+    return ""
   }
-
-  return sections
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -363,7 +361,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   })
 
   // Analyze with Claude
-  let clarkOutput: ClarkOutput
+  let clarkOutput: ClarkQuestionOutput
   if (docPayloads.length > 0) {
     try {
       clarkOutput = await analyzeWithClaude(docPayloads, bidName || bid.project_name, extraNote || "")
@@ -373,7 +371,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
           ...existingEstimate,
           meta: {
             ...(existingEstimate.meta ?? {}),
-            status: "clark_draft",
+            status: "clark_questions",
             clark_notes: `⚠️ Clark AI error: ${e.message}`,
             prepared_by: "Clark",
             prepared_at: new Date().toISOString(),
@@ -386,64 +384,35 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   } else {
     clarkOutput = {
       scope_summary: "No documents available for analysis. Please attach bid documents and re-send to Clark.",
-      line_items:    [],
-      assumptions:   ["No documents found in linked Dropbox folder — manual entry required"],
-      exclusions:    [],
-      hazmat_present: false,
-      confidence:    0,
+      questions: [],
+      preliminary_data: {
+        line_items: [],
+        assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
+      },
     }
   }
 
-  // Map line items to sections
-  const sections = mapLineItemsToSections(clarkOutput.line_items, DEFAULT_SECTIONS)
-
-  // Build assumptions list
-  const assumptions = [
-    ...clarkOutput.assumptions.map((text, i) => ({
-      id:       `clark-a-${i}`,
-      severity: "warn" as const,
-      source:   "Clark AI analysis",
-      text,
-      resolved: false,
-    })),
-    ...clarkOutput.exclusions.map((text, i) => ({
-      id:       `clark-e-${i}`,
-      severity: "info" as const,
-      source:   "Clark exclusions",
-      text:     `EXCLUDED: ${text}`,
-      resolved: false,
-    })),
-    ...(clarkOutput.hazmat_present ? [{
-      id:       "clark-hazmat",
-      severity: "flag" as const,
-      source:   "Clark AI analysis",
-      text:     "Hazmat materials detected — confirm scope and quantities with certified report",
-      resolved: false,
-    }] : []),
-  ]
-
-  const meta: EstimateMeta & { clark_confidence?: number } = {
-    status:            "clark_draft",
+  const meta: EstimateMeta = {
+    status:            "clark_questions",
     clark_notes:       clarkOutput.scope_summary,
     prepared_by:       "Clark",
     prepared_at:       new Date().toISOString(),
-    assumptions,
-    clark_confidence:  clarkOutput.confidence,
+    assumptions: [],
   }
 
   const estimateData = {
     config:      DEFAULT_CONFIG,
-    sections,
+    sections: DEFAULT_SECTIONS,
     subtrades:   DEFAULT_SUBTRADES,
     meta,
-    clark_draft: clarkOutput,
+    clark_questions: clarkOutput,
     grand_total: 0,
   }
 
   // Save to Supabase
   await updateBid(id, {
     estimate_data: JSON.stringify(estimateData),
-    status:        "clark_draft",
+    status:        "clark_questions",
   })
 
   // Optional Clark webhook (non-fatal)
@@ -455,8 +424,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       body: JSON.stringify({
         bid_id:    id,
         bid_name:  bidName || bid.project_name,
-        clark_draft: clarkOutput,
-        message:   `📐 Clark completed analysis for **${bidName || bid.project_name}**\n• Confidence: ${Math.round((clarkOutput.confidence ?? 0) * 100)}%\n• ${clarkOutput.line_items?.length ?? 0} line items extracted\n• Review: ${process.env.NEXTAUTH_URL || "https://west-crow-dashboard.vercel.app"}/bids/${id}/estimate`,
+        clark_questions: clarkOutput,
+        message:   `📐 Clark completed analysis for **${bidName || bid.project_name}**\n• ${clarkOutput.questions?.length ?? 0} clarifying questions generated\n• Review: ${process.env.NEXTAUTH_URL || "https://west-crow-dashboard.vercel.app"}/bids/${id}/estimate`,
       }),
     }).catch(() => {})
   }
@@ -464,8 +433,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   return NextResponse.json({
     ok:            true,
     docs_analyzed: docPayloads.length,
-    line_items:    clarkOutput.line_items?.length ?? 0,
-    confidence:    clarkOutput.confidence,
+    questions:     clarkOutput.questions?.length ?? 0,
     errors,
   })
 }

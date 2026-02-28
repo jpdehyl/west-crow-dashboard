@@ -6,6 +6,7 @@ import CloneBidButton from "@/components/CloneBidButton"
 import AddDocumentForm from "@/components/AddDocumentForm"
 import EditBidForm from "@/components/EditBidForm"
 import EstimateStatusButton from "@/components/EstimateStatusButton"
+import ClarkQuestionsCard from "@/components/ClarkQuestionsCard"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -179,6 +180,12 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
         )}
         <AddDocumentForm bidId={bid.id} />
       </div>
+
+
+      <ClarkQuestionsCard
+        bidId={bid.id}
+        estimateData={(bid as any).estimate_data ?? null}
+      />
 
       {/* Estimate link */}
       <div style={{ marginBottom: "1.5rem", padding: "1rem 1.25rem", background: "var(--bg-subtle)", borderRadius: "8px", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

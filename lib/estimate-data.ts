@@ -56,7 +56,7 @@ export interface Assumption {
   resolved: boolean              // JP checks off after reviewing
 }
 
-export type EstimateStatus = "clark_draft" | "in_review" | "approved" | "sent"
+export type EstimateStatus = "clark_working" | "clark_questions" | "clark_draft" | "in_review" | "approved" | "sent"
 
 export interface EstimateMeta {
   status: EstimateStatus

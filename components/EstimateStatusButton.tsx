@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_draft" | "approved" | "view_only" | "hidden"
+type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_questions" | "clark_draft" | "approved" | "view_only" | "hidden"
 
 type DocEntry = { name: string; url: string; type: string }
 
@@ -31,6 +31,7 @@ function getState(documents: DocEntry[], estimateData: string | null, bidStatus:
     const parsed = JSON.parse(estimateData)
     const status = parsed?.meta?.status
     if (status === "clark_draft")   return "clark_draft"
+    if (status === "clark_questions") return "clark_questions"
     if (status === "clark_working") return "clark_working"
     if (status === "approved")      return "approved"
   } catch {}
@@ -89,16 +90,24 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
     description: "Documents ready — trigger Clark to begin",
   },
   clark_working: {
-    label: "Clark Working…",
+    label: "Clark is analyzing...",
     icon: "⏳",
     bg: "var(--bg-subtle)",
     color: "var(--ink-muted)",
     border: "var(--border)",
     disabled: true,
-    description: "Clark is reading the documents and building the estimate",
+    description: "Clark is reading documents and building clarifying questions",
+  },
+  clark_questions: {
+    label: "Clark has questions →",
+    icon: "🟨",
+    bg: "#fffbeb",
+    color: "#9a6700",
+    border: "#f1c85a",
+    description: "Answer Clark's clarifying questions to finish the draft",
   },
   clark_draft: {
-    label: "Review Clark's Draft",
+    label: "Review Clark's Draft →",
     icon: "🔴",
     bg: "#c45042",
     color: "#fff",
@@ -106,7 +115,7 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
     description: "Clark has posted a draft — your review is needed",
   },
   approved: {
-    label: "Estimate Approved",
+    label: "Approved ✓",
     icon: "✓",
     bg: "#f0faf4",
     color: "#3d8c5c",
@@ -125,7 +134,7 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
 
 // ── Modal: missing docs ───────────────────────────────────────────────────
 
-function MissingDocsModal({ missing, onClose, bidId }: { missing: string[]; onClose: () => void; bidId: string }) {
+function MissingDocsModal({ missing, onClose }: { missing: string[]; onClose: () => void }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100 }} />
@@ -284,6 +293,11 @@ export default function EstimateStatusButton({
     if (cfg.disabled) return
     if (state === "no_quantities")                                   { setModal("missing"); return }
     if (state === "ready")                                           { setModal("start");   return }
+    if (state === "clark_questions") {
+      const el = document.getElementById("clark-questions-card")
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
     if (state === "clark_draft" || state === "approved" || state === "view_only") {
       router.push(`/bids/${bidId}/estimate`)
     }
@@ -324,7 +338,7 @@ export default function EstimateStatusButton({
       </div>
 
       {modal === "missing" && (
-        <MissingDocsModal missing={missing} onClose={() => setModal(null)} bidId={bidId} />
+        <MissingDocsModal missing={missing} onClose={() => setModal(null)} />
       )}
       {modal === "start" && (
         <StartEstimateModal

@@ -348,21 +348,34 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
       : []
   const clarkCrewSize = Number(saved?.clark_draft?.crew_size ?? saved?.clark_questions?.crew_size) || 4
   const clarkTotalManDays = Number(saved?.clark_draft?.total_man_days ?? saved?.clark_questions?.total_man_days)
-  const recommendedRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("TOTAL RECOMMENDED BID"))
-  const labourScopeRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("LABOUR SCOPE TOTAL"))
-  const recommendedTotal = typeof recommendedRow?.total === "number" ? recommendedRow.total : null
-  const labourScopeManDays = typeof labourScopeRow?.man_days === "number"
-    ? labourScopeRow.man_days
-    : (Number.isFinite(clarkTotalManDays) ? clarkTotalManDays : 0)
+  const pricedRows = clarkLineItems.filter((item) => {
+    const desc = String(item.description ?? "").toUpperCase()
+    return !desc.includes("LABOUR SCOPE TOTAL") && !desc.includes("TOTAL RECOMMENDED BID")
+  })
+  const clarkOwnForces = pricedRows
+    .filter((item) => {
+      const desc = String(item.description ?? "").toUpperCase()
+      return (typeof item.man_days === "number" && item.man_days > 0 && !desc.includes("SUBTRADES") && !desc.includes("TOTAL RECOMMENDED BID"))
+    })
+    .reduce((sum, item) => sum + (Number(item.total) || 0), 0)
+  const labourScopeManDaysFromRows = pricedRows
+    .filter((item) => typeof item.man_days === "number" && item.man_days > 0)
+    .reduce((sum, item) => sum + (Number(item.man_days) || 0), 0)
+
   const summaryCrewDays = Number(saved?.clark_draft?.crew_days ?? saved?.clark_questions?.crew_days)
+  const labourScopeManDays = labourScopeManDaysFromRows > 0
+    ? labourScopeManDaysFromRows
+    : (Number.isFinite(clarkTotalManDays) ? clarkTotalManDays : 0)
   const crewDays = Number.isFinite(summaryCrewDays) ? summaryCrewDays : (labourScopeManDays > 0 ? labourScopeManDays / clarkCrewSize : 0)
   const blendedRate = Number(saved?.clark_draft?.blended_rate ?? saved?.clark_questions?.blended_rate) || 300
 
-  const dfTotal = deHylForces(sections, cfg)
-  const labourScopeTotal = typeof labourScopeRow?.total === "number" ? labourScopeRow.total : dfTotal
+  const sectionDfTotal = deHylForces(sections, cfg)
+  const dfTotal = clarkLineItems.length > 0 ? clarkOwnForces : sectionDfTotal
+  const labourScopeTotal = dfTotal
   const stTotal = subtradesTotal(subtrades, cfg.subtrade_markup)
+  const recommendedTotal = labourScopeTotal + stTotal
   const gt      = dfTotal + stTotal
-  const displayTotal = recommendedTotal ?? gt
+  const displayTotal = recommendedTotal
 
   function updateItem(secId: string, itemId: string, field: string, value: any) {
     setSections(prev => prev.map(s =>
@@ -520,16 +533,23 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
               </tr>
             </thead>
             <tbody>
-              {clarkLineItems.map((item, idx) => {
-                const isBold = item === labourScopeRow || item === recommendedRow
-                return (
-                  <tr key={`${item.description}-${idx}`} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ ...cell, color: "var(--ink)" }}>{item.description}</td>
-                    <td style={numCell}>{typeof item.man_days === "number" ? dec(item.man_days) : ""}</td>
-                    <td style={{ ...numCell, fontWeight: isBold ? 700 : 500, color: isBold ? "var(--ink)" : "var(--ink-muted)" }}>{$(item.total ?? 0)}</td>
-                  </tr>
-                )
-              })}
+              {pricedRows.map((item, idx) => (
+                <tr key={`${item.description}-${idx}`} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <td style={{ ...cell, color: "var(--ink)" }}>{item.description}</td>
+                  <td style={numCell}>{typeof item.man_days === "number" ? dec(item.man_days) : ""}</td>
+                  <td style={{ ...numCell, fontWeight: 500, color: "var(--ink-muted)" }}>{$(item.total ?? 0)}</td>
+                </tr>
+              ))}
+              <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-subtle)" }}>
+                <td style={{ ...cell, color: "var(--ink)", fontWeight: 700 }}>Labour Scope Total</td>
+                <td style={{ ...numCell, fontWeight: 700, color: "var(--ink)" }}>{labourScopeManDays > 0 ? dec(labourScopeManDays) : "—"}</td>
+                <td style={{ ...numCell, fontWeight: 700, color: "var(--ink)" }}>{$(labourScopeTotal)}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid var(--border)", background: "#fff7ed" }}>
+                <td style={{ ...cell, color: "var(--terra)", fontWeight: 700 }}>TOTAL RECOMMENDED BID</td>
+                <td style={{ ...numCell, fontWeight: 700, color: "var(--terra)" }}>—</td>
+                <td style={{ ...numCell, fontWeight: 700, color: "var(--terra)" }}>{$(recommendedTotal)}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -618,7 +638,7 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
             <tr>
               <td style={{ ...cell, textAlign: "left", fontWeight: 700 }}>TOTAL RECOMMENDED BID</td>
               <td style={{ ...cell, textAlign: "right" }}></td>
-              <td style={{ ...cell, textAlign: "right", fontWeight: 700, color: "var(--terra)" }}>{$(recommendedTotal ?? (labourScopeTotal + subtradesTotal(subtrades, 20)))}</td>
+              <td style={{ ...cell, textAlign: "right", fontWeight: 700, color: "var(--terra)" }}>{$(recommendedTotal)}</td>
             </tr>
             <tr>
               <td style={{ ...cell, borderBottom: "none", textAlign: "left", color: "var(--ink-muted)" }}>Crew Size</td>

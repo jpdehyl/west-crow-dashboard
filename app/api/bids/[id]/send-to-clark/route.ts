@@ -176,6 +176,45 @@ function parseClarkResponse(text: string): ClarkQuestionOutput {
   }
 }
 
+function applySubtradeQtyOverrides(output: ClarkQuestionOutput): ClarkQuestionOutput {
+  const totalManDays = Number(output.total_man_days) || 0
+  const crewDays = Number(output.crew_days) || 0
+  const lineItems = Array.isArray(output.line_items) ? output.line_items : []
+
+  const binLine = lineItems.find((item) => String(item.description ?? "").toLowerCase().includes("bin"))
+  const binMatch = String(binLine?.description ?? "").match(/(\d+(?:\.\d+)?)/)
+  const parsedBinQty = Number(binMatch?.[1])
+  const binQty = Number.isFinite(parsedBinQty) ? parsedBinQty : 0
+
+  const subtrades = Array.isArray(output.subtrades) ? output.subtrades : []
+  const patchedSubtrades = subtrades.map((subtrade) => {
+    const activity = String(subtrade.activity ?? "").toLowerCase()
+
+    if (activity.includes("pickup truck")) {
+      return { ...subtrade, qty: Math.round(totalManDays * 10) / 10 }
+    }
+
+    if (activity.includes("small tools")) {
+      return { ...subtrade, qty: Math.round(totalManDays * 8 * 10) / 10 }
+    }
+
+    if (activity.includes("project manager")) {
+      return { ...subtrade, qty: Math.round(crewDays / 2) }
+    }
+
+    if (activity.includes("waste") && activity.includes("bin")) {
+      return { ...subtrade, qty: binQty }
+    }
+
+    return subtrade
+  })
+
+  return {
+    ...output,
+    subtrades: patchedSubtrades,
+  }
+}
+
 async function analyzeWithClaude(
   docPayloads: { filename: string; mediaType: string; base64: string }[],
   bidName: string,
@@ -282,7 +321,7 @@ async function analyzeWithClaude(
 
   const result = await response.json()
   const text = result.content?.[0]?.text ?? "{}"
-  return parseClarkResponse(text)
+  return applySubtradeQtyOverrides(parseClarkResponse(text))
 }
 
 async function loadClarkKnowledge(): Promise<string> {

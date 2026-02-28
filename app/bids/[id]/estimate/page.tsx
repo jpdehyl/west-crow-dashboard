@@ -19,6 +19,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   // If clark_draft exists in estimate_data, confidence is in meta.clark_confidence
   const clarkDraft = saved?.clark_draft ?? null
   const clarkConfidence: number | null = saved?.meta?.clark_confidence ?? clarkDraft?.confidence ?? null
+  const estimateSheetUrl: string | null = saved?.sheet_url ?? bid.estimate_sheet_url ?? null
   const showClarkQuestions = saved?.meta?.status === "clark_questions"
 
   return (
@@ -44,22 +45,34 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         }}>
           <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🤖</span>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#5b21b6", marginBottom: "0.3rem" }}>
-              Clark analyzed this bid
-              {clarkConfidence !== null && (
-                <span style={{
-                  marginLeft: "0.6rem",
-                  padding: "1px 8px",
-                  background: clarkConfidence >= 0.8 ? "#d1fae5" : clarkConfidence >= 0.5 ? "#fef9c3" : "#fee2e2",
-                  color:      clarkConfidence >= 0.8 ? "#065f46" : clarkConfidence >= 0.5 ? "#713f12" : "#991b1b",
-                  borderRadius: "999px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                }}>
-                  {Math.round(clarkConfidence * 100)}% confidence
-                </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.3rem" }}>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#5b21b6" }}>
+                Clark analyzed this bid
+                {clarkConfidence !== null && (
+                  <span style={{
+                    marginLeft: "0.6rem",
+                    padding: "1px 8px",
+                    background: clarkConfidence >= 0.8 ? "#d1fae5" : clarkConfidence >= 0.5 ? "#fef9c3" : "#fee2e2",
+                    color:      clarkConfidence >= 0.8 ? "#065f46" : clarkConfidence >= 0.5 ? "#713f12" : "#991b1b",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                  }}>
+                    {Math.round(clarkConfidence * 100)}% confidence
+                  </span>
+                )}
+              </p>
+              {estimateSheetUrl && (
+                <a
+                  href={estimateSheetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "12px", fontWeight: 600, color: "#2563eb", textDecoration: "none" }}
+                >
+                  📊 Open in Google Sheets →
+                </a>
               )}
-            </p>
+            </div>
             <p style={{ fontSize: "12px", color: "#6d28d9", lineHeight: 1.5 }}>
               {clarkDraft.scope_summary}
             </p>
@@ -88,7 +101,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
           bidId={id}
           bidName={bid.project_name}
           saved={saved}
-          estimateSheetUrl={bid.estimate_sheet_url ?? null}
+          estimateSheetUrl={estimateSheetUrl}
         />
       </div>
     </div>

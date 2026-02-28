@@ -1,0 +1,2 @@
+ALTER TABLE bids
+ADD COLUMN IF NOT EXISTS estimate_sheet_url TEXT;

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_draft" | "approved" | "view_only" | "hidden"
+type EstimateState = "no_quantities" | "ready" | "clark_working" | "clark_questions" | "clark_draft" | "approved" | "view_only" | "hidden"
 
 type DocEntry = { name: string; url: string; type: string }
 
@@ -13,7 +13,7 @@ const CLOSED_STATUSES = ["won", "lost", "no-bid", "sent"]
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function getState(documents: DocEntry[], estimateData: string | null, bidStatus: string): EstimateState {
+function getState(_documents: DocEntry[], estimateData: string | null, bidStatus: string): EstimateState {
   // Bid is already past the estimate stage — show view-only or nothing
   if (CLOSED_STATUSES.includes(bidStatus)) {
     if (!estimateData) return "hidden"         // won/lost with no estimate data (legacy seed bids)
@@ -25,11 +25,13 @@ function getState(documents: DocEntry[], estimateData: string | null, bidStatus:
     return "view_only"
   }
 
+  if (bidStatus === "clark_questions") return "clark_questions"
   if (!estimateData) return "ready"
 
   try {
     const parsed = JSON.parse(estimateData)
     const status = parsed?.meta?.status
+    if (status === "clark_questions") return "clark_questions"
     if (status === "clark_draft")   return "clark_draft"
     if (status === "clark_working") return "clark_working"
     if (status === "approved")      return "approved"
@@ -73,12 +75,12 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
   description: string
 }> = {
   no_quantities: {
-    label: "Need Quantities",
+    label: "Start Estimate",
     icon: "⚠️",
     bg: "#fffbf0",
     color: "#92660a",
     border: "#e0c040",
-    description: "Missing required documents before Clark can estimate",
+    description: "Start Clark's estimate analysis",
   },
   ready: {
     label: "Start Estimate",
@@ -89,16 +91,24 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
     description: "Documents ready — trigger Clark to begin",
   },
   clark_working: {
-    label: "Clark Working…",
-    icon: "⏳",
+    label: "Clark is analyzing...",
+    icon: "🌀",
     bg: "var(--bg-subtle)",
     color: "var(--ink-muted)",
     border: "var(--border)",
     disabled: true,
     description: "Clark is reading the documents and building the estimate",
   },
+  clark_questions: {
+    label: "Clark has questions →",
+    icon: "🟡",
+    bg: "#fffbeb",
+    color: "#9a6700",
+    border: "#f4c542",
+    description: "Answer Clark's clarifying questions to complete the draft",
+  },
   clark_draft: {
-    label: "Review Clark's Draft",
+    label: "Review Clark's Draft →",
     icon: "🔴",
     bg: "#c45042",
     color: "#fff",
@@ -106,8 +116,8 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
     description: "Clark has posted a draft — your review is needed",
   },
   approved: {
-    label: "Estimate Approved",
-    icon: "✓",
+    label: "Approved ✓",
+    icon: "✅",
     bg: "#f0faf4",
     color: "#3d8c5c",
     border: "#3d8c5c",
@@ -125,7 +135,7 @@ const STATE_CONFIG: Record<Exclude<EstimateState, "hidden">, {
 
 // ── Modal: missing docs ───────────────────────────────────────────────────
 
-function MissingDocsModal({ missing, onClose, bidId }: { missing: string[]; onClose: () => void; bidId: string }) {
+function MissingDocsModal({ missing, onClose }: { missing: string[]; onClose: () => void }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100 }} />
@@ -282,8 +292,12 @@ export default function EstimateStatusButton({
 
   function handleClick() {
     if (cfg.disabled) return
-    if (state === "no_quantities")                                   { setModal("missing"); return }
-    if (state === "ready")                                           { setModal("start");   return }
+    if (state === "ready" || state === "no_quantities") { setModal("start"); return }
+    if (state === "clark_questions") {
+      const card = document.getElementById("clark-questions-card")
+      card?.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
     if (state === "clark_draft" || state === "approved" || state === "view_only") {
       router.push(`/bids/${bidId}/estimate`)
     }
@@ -324,7 +338,7 @@ export default function EstimateStatusButton({
       </div>
 
       {modal === "missing" && (
-        <MissingDocsModal missing={missing} onClose={() => setModal(null)} bidId={bidId} />
+        <MissingDocsModal missing={missing} onClose={() => setModal(null)} />
       )}
       {modal === "start" && (
         <StartEstimateModal

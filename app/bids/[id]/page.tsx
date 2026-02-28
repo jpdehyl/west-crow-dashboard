@@ -1,11 +1,12 @@
 import { getBid, getClients, getProjects } from "@/lib/sheets"
-import { formatCurrency, formatDate, formatDateShort, daysUntil, STATUS_COLOR, statusLabel } from "@/lib/utils"
+import { formatCurrency, formatDate, formatDateShort, daysUntil } from "@/lib/utils"
 import { StatusDot } from "@/components/StatusDot"
 import BidActions from "@/components/BidActions"
 import CloneBidButton from "@/components/CloneBidButton"
 import AddDocumentForm from "@/components/AddDocumentForm"
 import EditBidForm from "@/components/EditBidForm"
 import EstimateStatusButton from "@/components/EstimateStatusButton"
+import ClarkQuestionsCard from "@/components/ClarkQuestionsCard"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -73,6 +74,9 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
       </div>
+
+
+      <ClarkQuestionsCard bidId={bid.id} estimateData={(bid as any).estimate_data ?? null} />
 
       {/* Timeline strip */}
       <div style={{ display: "flex", alignItems: "flex-start", margin: "1.25rem 0", padding: "1rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)" }}>

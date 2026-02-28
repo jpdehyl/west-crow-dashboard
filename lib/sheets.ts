@@ -14,9 +14,28 @@ function normalizeBidRow(row: any) {
 // ── Bids ─────────────────────────────────────────────────────────────────────
 
 export async function getBids() {
-  const { data, error } = await supabase.from('bids').select('*').order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(normalizeBidRow)
+  const pageSize = 1000
+  let from = 0
+  const allRows: any[] = []
+
+  while (true) {
+    const to = from + pageSize - 1
+    const { data, error } = await supabase
+      .from('bids')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to)
+
+    if (error) throw new Error(error.message)
+
+    const rows = data ?? []
+    allRows.push(...rows)
+
+    if (rows.length < pageSize) break
+    from += pageSize
+  }
+
+  return allRows.map(normalizeBidRow)
 }
 
 export async function getBid(id: string) {

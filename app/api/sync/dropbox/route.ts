@@ -130,6 +130,7 @@ export async function POST() {
         source: 'dropbox',
         dropbox_folder: path,
         documents,
+        dropbox_linked: true,
         timeline: [],
       })
       summary.created++

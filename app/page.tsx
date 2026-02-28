@@ -54,6 +54,7 @@ type CalendarEvent = {
   date: string
   daysUntil: number
   bucket: "critical" | "soon" | "upcoming" | "later"
+  linked?: boolean
 }
 
 const BUCKETS: { key: CalendarEvent["bucket"]; emoji: string; label: string }[] = [
@@ -170,6 +171,16 @@ export default function DashboardPage() {
                     <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                       {ev.title}
                     </span>
+                    {ev.linked === false && (
+                      <span style={{
+                        fontSize: "10px", fontWeight: 700, color: "var(--gold)",
+                        background: "var(--gold-light)", padding: "1px 5px",
+                        borderRadius: "4px", flexShrink: 0, marginLeft: "0.4rem",
+                        whiteSpace: "nowrap",
+                      }}>
+                        ⚠ Unlinked
+                      </span>
+                    )}
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0, marginLeft: "0.75rem" }}>
                       <span style={{ fontSize: "12px", color: "var(--ink-faint)" }}>
                         {new Date(ev.date + "T12:00:00").toLocaleDateString("en-CA", { month: "short", day: "numeric" })}

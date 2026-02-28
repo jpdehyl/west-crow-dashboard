@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 type CalendarEvent = {
+  linked: boolean
   title: string
   date: string
   daysUntil: number
@@ -89,6 +90,7 @@ export async function GET() {
         date: eventDate.toISOString().slice(0, 10),
         daysUntil,
         bucket,
+        linked: false,
       })
     }
 

@@ -129,7 +129,7 @@ async function upsertBidsInChunks(rows: BidUpsertRow[]): Promise<void> {
   const CHUNK_SIZE = 500
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
     const chunk = rows.slice(i, i + CHUNK_SIZE)
-    const { error } = await supabase.from('bids').upsert(chunk, { onConflict: 'id' })
+    const { error } = await supabase.from('bids').upsert(chunk, { onConflict: 'id', ignoreDuplicates: false })
     if (error) throw new Error(`Supabase upsert failed: ${error.message}`)
   }
 }
@@ -164,20 +164,8 @@ async function buildUpsertRows(folderEntries: DropboxEntry[]): Promise<{ rows: B
 
   if (basicRows.length === 0) return { rows: [], skipped }
 
-  const ids = basicRows.map((row) => row.id)
-  const { data: existingRows, error } = await supabase.from('bids').select('id,status').in('id', ids)
-  if (error) throw new Error(`Failed loading existing bid status: ${error.message}`)
-
-  const existingStatusById = new Map<string, string>((existingRows ?? []).map((row: any) => [row.id, row.status]))
-  const rows = basicRows.map((row) => {
-    const existingStatus = existingStatusById.get(row.id)
-    if (existingStatus && existingStatus !== 'active') {
-      return { ...row, status: existingStatus }
-    }
-    return row
-  })
-
-  return { rows, skipped }
+  // Skip status preservation check on large batches — upsert uses onConflict to preserve existing fields
+  return { rows: basicRows, skipped }
 }
 
 export async function GET(request: Request) { return POST(request) }

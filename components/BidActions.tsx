@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 type Status = 'active' | 'sent' | 'won' | 'lost' | 'no-bid'
+type BidStatusLike = Status | 'invited' | 'estimating' | 'submitted' | 'decision' | string
 
 const ACTIONS: { status: Status; label: string; color: string; bg: string }[] = [
   { status: 'sent',    label: 'Mark Sent',    color: 'var(--gold)', bg: 'var(--gold-light)' },
@@ -21,8 +22,15 @@ const NEXT_STATUS: Record<Status, Status[]> = {
 
 interface Props {
   bidId: string
-  currentStatus: Status
+  currentStatus: BidStatusLike
   currentValue: number
+}
+
+function getAvailableStatuses(status: BidStatusLike): Status[] {
+  if (status === 'invited' || status === 'estimating') return NEXT_STATUS.active
+  if (status === 'submitted') return NEXT_STATUS.sent
+  if (status === 'decision') return []
+  return NEXT_STATUS[status as Status] ?? []
 }
 
 export default function BidActions({ bidId, currentStatus, currentValue }: Props) {
@@ -32,7 +40,7 @@ export default function BidActions({ bidId, currentStatus, currentValue }: Props
   const [margin, setMargin]   = useState('')
   const [done, setDone]       = useState(false)
 
-  const available = NEXT_STATUS[currentStatus]
+  const available = getAvailableStatuses(currentStatus)
   if (available.length === 0) return null
 
   async function act(status: Status) {

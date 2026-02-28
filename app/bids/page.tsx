@@ -54,7 +54,7 @@ export default function PipelinePage() {
       const msg = `Dropbox: +${dbx.created ?? 0} new, ${dbx.updated ?? 0} updated · Calendar: +${cal.created ?? 0} new, ${cal.matched ?? 0} matched`
       setSyncMsg(msg)
       // Refresh bids
-      fetch('/api/bids').then(r => r.json()).then(data => setBids(Array.isArray(data) ? data : []))
+      fetch('/api/bids', { credentials: 'include' }).then(r => r.json()).then(data => setBids(Array.isArray(data) ? data : []))
     } catch {
       setSyncMsg('Sync failed — check console')
     } finally {
@@ -64,7 +64,7 @@ export default function PipelinePage() {
   }
 
   useEffect(() => {
-    fetch('/api/bids')
+    fetch('/api/bids', { credentials: 'include' })
       .then(r => r.json())
       .then(data => { setBids(Array.isArray(data) ? data : []); setLoading(false) })
       .catch(() => setLoading(false))

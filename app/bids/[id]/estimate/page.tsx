@@ -71,7 +71,12 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      <EstimateBuilder bidId={id} bidName={bid.project_name} saved={saved} />
+      <EstimateBuilder
+        bidId={id}
+        bidName={bid.project_name}
+        saved={saved}
+        estimateSheetUrl={bid.estimate_sheet_url ?? null}
+      />
     </div>
   )
 }

@@ -131,13 +131,12 @@ interface ClarkQuestion {
 interface ClarkQuestionOutput {
   scope_summary: string
   questions: ClarkQuestion[]
+  assumptions: string[]
+  line_items: { description: string; man_days: number | null; total: number }[]
   preliminary_data: {
     line_items: { description: string; quantity: number; unit: string; notes: string }[]
-    assumptions: string[]
   }
 }
-
-
 
 async function analyzeWithClaude(
   docPayloads: { filename: string; mediaType: string; base64: string }[],
@@ -160,6 +159,8 @@ async function analyzeWithClaude(
       extraNote ? `JP's note: ${extraNote}` : null,
       ``,
       `Analyze these demolition/construction documents. Extract what you can measure or confirm directly. For anything you cannot determine with confidence (floor finish type, partition wall LF, ceiling split ACT vs GWB, etc.), add it to a questions array.`,
+      `Use the DeHyl formula for pricing: man_days = units / production_rate, labour = man_days × $296/day, total = labour × 1.42 (OH 12% + profit 30%).`,
+      `If quantities are unknown, use 0 and explicitly flag the gap in assumptions.`,
       `Return ONLY valid JSON with shape:`,
       `{`,
       `  "scope_summary": "string",`,
@@ -170,9 +171,10 @@ async function analyzeWithClaude(
       `    "type": "text|number|choice",`,
       `    "choices": ["string"]`,
       `  }],`,
+      `  "assumptions": ["assumption 1"],`,
+      `  "line_items": [{"description": "Flooring (9500 SF)", "man_days": 33.55, "total": 16611}],`,
       `  "preliminary_data": {`,
-      `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
-      `    "assumptions": ["assumption 1"]`,
+      `    "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}]`,
       `  }`,
       `}`,
     ].filter(Boolean).join("\n"),
@@ -385,9 +387,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     clarkOutput = {
       scope_summary: "No documents available for analysis. Please attach bid documents and re-send to Clark.",
       questions: [],
+      assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
+      line_items: [],
       preliminary_data: {
         line_items: [],
-        assumptions: ["No documents found in linked Dropbox folder — manual entry required"],
       },
     }
   }

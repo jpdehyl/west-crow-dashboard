@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getBid, updateBid } from "@/lib/sheets"
 import { DEFAULT_SECTIONS } from "@/lib/estimate-data"
 import type { Section, EstimateMeta } from "@/lib/estimate-data"
+import { createClarkEstimateSheet } from "@/lib/google-estimate-sheet"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
@@ -16,9 +17,13 @@ type ClarkQuestion = {
   choices?: string[]
 }
 
+type ClarkTakeoffItem = { description: string; quantity: number; unit: string; notes: string }
+type ClarkPricedItem = { description: string; man_days: number | null; total: number }
+
 type ClarkOutput = {
   scope_summary: string
-  line_items: { description: string; quantity: number; unit: string; notes: string }[]
+  takeoff_items: ClarkTakeoffItem[]
+  line_items: ClarkPricedItem[]
   assumptions: string[]
   exclusions: string[]
   hazmat_present: boolean
@@ -38,7 +43,7 @@ const KEYWORD_MAP: { keywords: string[]; sectionId: string; itemId?: string }[] 
   { keywords: ["debris", "waste", "hauling", "disposal", "bin", "truck"], sectionId: "waste" },
 ]
 
-function mapLineItemsToSections(lineItems: ClarkOutput["line_items"], defaultSections: Section[]): Section[] {
+function mapLineItemsToSections(lineItems: ClarkTakeoffItem[], defaultSections: Section[]): Section[] {
   const sections = JSON.parse(JSON.stringify(defaultSections)) as Section[]
   for (const item of lineItems) {
     const desc = item.description.toLowerCase()
@@ -85,11 +90,14 @@ async function finalizeWithClaude(
           type: "text",
           text: [
             `You are Clark, an expert construction estimator's assistant for West Crow Contracting.`,
-            `Use the answered clarifying questions to produce the final line items with real quantities.`,
+            `Use the answered clarifying questions to produce final takeoff quantities and a priced summary.`,
+            `Use DeHyl math: man_days = units / production_rate, labour = man_days × 296, total = labour × 1.42.`,
+            `If quantities are unknown, set quantity to 0 and add a clear assumption.`,
             `Return ONLY valid JSON with shape:`,
             `{`,
             `  "scope_summary": "Brief scope description",`,
-            `  "line_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
+            `  "takeoff_items": [{"description": "...", "quantity": 0, "unit": "SF|EA|LF|LS|CY|day", "notes": "..."}],`,
+            `  "line_items": [{"description": "Flooring (9500 SF)", "man_days": 33.55, "total": 16611}],`,
             `  "assumptions": ["assumption 1", ...],`,
             `  "exclusions": ["exclusion 1", ...],`,
             `  "hazmat_present": true|false,`,
@@ -135,7 +143,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     answers ?? []
   )
 
-  const sections = mapLineItemsToSections(clarkOutput.line_items, DEFAULT_SECTIONS)
+  const takeoffItems = clarkOutput.takeoff_items ?? questionData.preliminary_data?.line_items ?? []
+  const sections = mapLineItemsToSections(takeoffItems, DEFAULT_SECTIONS)
   const assumptions = [
     ...(clarkOutput.assumptions ?? []).map((text: string, i: number) => ({
       id: `clark-a-${i}`,
@@ -155,16 +164,23 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     clark_confidence: clarkOutput.confidence,
   }
 
+  const sheetResult = await createClarkEstimateSheet(bid.project_name, clarkOutput.line_items ?? []).catch(() => null)
+
   await updateBid(id, {
     estimate_data: JSON.stringify({
       ...estimateData,
       sections,
       meta,
-      clark_draft: clarkOutput,
+      clark_draft: { ...clarkOutput, takeoff_items: takeoffItems },
       clark_answers: answers ?? [],
     }),
+    ...(sheetResult?.spreadsheetUrl ? { estimate_sheet_url: sheetResult.spreadsheetUrl } : {}),
     status: "clark_draft",
   })
 
-  return NextResponse.json({ ok: true, line_items: clarkOutput.line_items?.length ?? 0 })
+  return NextResponse.json({
+    ok: true,
+    line_items: clarkOutput.line_items?.length ?? 0,
+    estimate_sheet_url: sheetResult?.spreadsheetUrl ?? null,
+  })
 }

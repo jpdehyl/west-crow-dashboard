@@ -266,6 +266,7 @@ function ApprovedPanel({
 }
 
 type ClarkPricedLineItem = { description: string; man_days: number | null; total: number }
+type ClarkSubtradeItem = { phase_code: string; activity: string; qty: number; unit: string; unit_cost: number }
 
 export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUrl }: { bidId: string; bidName: string; saved: any; estimateSheetUrl?: string | null }) {
   const router = useRouter()
@@ -296,22 +297,69 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
     })
   })
   const [subtrades, setSubtrades] = useState<SubtradeItem[]>(() => {
-    if (!saved?.subtrades) return DEFAULT_SUBTRADES
+    const savedSubtrades = Array.isArray(saved?.subtrades) ? saved.subtrades : []
+    const clarkSubtrades: ClarkSubtradeItem[] = Array.isArray(saved?.clark_draft?.subtrades)
+      ? saved.clark_draft.subtrades
+      : Array.isArray(saved?.clark_questions?.subtrades)
+        ? saved.clark_questions.subtrades
+        : []
+
     return DEFAULT_SUBTRADES.map(def => {
-      const s = saved.subtrades?.find((x: any) => x.id === def.id)
-      return s ? { ...def, units: Number(s.units) || 0, unit_cost: Number(s.unit_cost) || def.unit_cost, active: s.active !== false, notes: s.notes || "" } : def
+      const persisted = savedSubtrades.find((x: any) => x.id === def.id)
+      const clarkMatch = clarkSubtrades.find((x) => {
+        const phaseMatch = String(x.phase_code ?? "") === def.phase_code
+        const activity = String(x.activity ?? "").toLowerCase()
+        const desc = def.description.toLowerCase()
+        const sameConcept =
+          (activity.includes("waste disposal") && desc.includes("waste disposal")) ||
+          (activity.includes("pickup truck") && desc.includes("pickup truck")) ||
+          (activity.includes("small tools") && desc.includes("small tools")) ||
+          (activity.includes("project manager") && desc.includes("project manager")) ||
+          (activity.includes("haul") && desc.includes("haul"))
+        return phaseMatch && (activity.includes(desc) || desc.includes(activity) || sameConcept)
+      })
+
+      const fallbackQty = Number(clarkMatch?.qty)
+      const fallbackCost = Number(clarkMatch?.unit_cost)
+
+      if (persisted) {
+        return {
+          ...def,
+          units: Number(persisted.units) || (Number.isFinite(fallbackQty) ? fallbackQty : 0),
+          unit_cost: Number(persisted.unit_cost) || (Number.isFinite(fallbackCost) ? fallbackCost : def.unit_cost),
+          active: persisted.active !== false,
+          notes: persisted.notes || "",
+        }
+      }
+
+      return {
+        ...def,
+        units: Number.isFinite(fallbackQty) ? fallbackQty : 0,
+        unit_cost: Number.isFinite(fallbackCost) ? fallbackCost : def.unit_cost,
+      }
     })
   })
   const [meta, setMeta] = useState<EstimateMeta>(saved?.meta ?? DEFAULT_META)
 
-  const clarkLineItems: ClarkPricedLineItem[] = Array.isArray(saved?.clark_draft?.line_items)
-    ? saved.clark_draft.line_items
-    : []
+  const clarkLineItems: ClarkPricedLineItem[] = Array.isArray(saved?.line_items)
+    ? saved.line_items
+    : Array.isArray(saved?.clark_draft?.line_items)
+      ? saved.clark_draft.line_items
+      : []
+  const clarkCrewSize = Number(saved?.clark_draft?.crew_size ?? saved?.clark_questions?.crew_size) || 4
+  const clarkTotalManDays = Number(saved?.clark_draft?.total_man_days ?? saved?.clark_questions?.total_man_days)
   const recommendedRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("TOTAL RECOMMENDED BID"))
   const labourScopeRow = clarkLineItems.find((item) => item.description?.toUpperCase().includes("LABOUR SCOPE TOTAL"))
   const recommendedTotal = typeof recommendedRow?.total === "number" ? recommendedRow.total : null
+  const labourScopeManDays = typeof labourScopeRow?.man_days === "number"
+    ? labourScopeRow.man_days
+    : (Number.isFinite(clarkTotalManDays) ? clarkTotalManDays : 0)
+  const summaryCrewDays = Number(saved?.clark_draft?.crew_days ?? saved?.clark_questions?.crew_days)
+  const crewDays = Number.isFinite(summaryCrewDays) ? summaryCrewDays : (labourScopeManDays > 0 ? labourScopeManDays / clarkCrewSize : 0)
+  const blendedRate = Number(saved?.clark_draft?.blended_rate ?? saved?.clark_questions?.blended_rate) || 300
 
   const dfTotal = deHylForces(sections, cfg)
+  const labourScopeTotal = typeof labourScopeRow?.total === "number" ? labourScopeRow.total : dfTotal
   const stTotal = subtradesTotal(subtrades, cfg.subtrade_markup)
   const gt      = dfTotal + stTotal
   const displayTotal = recommendedTotal ?? gt
@@ -550,6 +598,45 @@ export default function EstimateBuilder({ bidId, bidName, saved, estimateSheetUr
         <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--ink-faint)" }}>
           Material % not applied to Mob/Demob
         </span>
+      </div>
+
+      {/* ── Summary Card ── */}
+      <div style={{ marginBottom: "1.25rem", padding: "1rem 1.25rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px" }}>
+        <p style={{ fontSize: "11px", color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Clark Summary</p>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+          <tbody>
+            <tr>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "left" }}>Labour Scope Total</td>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "right", color: "var(--ink-muted)" }}>{labourScopeManDays > 0 ? `${dec(labourScopeManDays)} man-days` : "—"}</td>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "right", fontWeight: 600 }}>{$(labourScopeTotal)}</td>
+            </tr>
+            <tr>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "left" }}>Subtrades (with 20% markup)</td>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "right", color: "var(--ink-muted)" }}>—</td>
+              <td style={{ ...cell, borderBottom: "1px solid var(--border)", textAlign: "right", fontWeight: 600 }}>{$(subtradesTotal(subtrades, 20))}</td>
+            </tr>
+            <tr>
+              <td style={{ ...cell, textAlign: "left", fontWeight: 700 }}>TOTAL RECOMMENDED BID</td>
+              <td style={{ ...cell, textAlign: "right" }}></td>
+              <td style={{ ...cell, textAlign: "right", fontWeight: 700, color: "var(--terra)" }}>{$(recommendedTotal ?? (labourScopeTotal + subtradesTotal(subtrades, 20)))}</td>
+            </tr>
+            <tr>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "left", color: "var(--ink-muted)" }}>Crew Size</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right", color: "var(--ink-muted)" }}>{clarkCrewSize} workers</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}></td>
+            </tr>
+            <tr>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "left", color: "var(--ink-muted)" }}>Crew Days</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right", color: "var(--ink-muted)" }}>{crewDays > 0 ? `${dec(crewDays)} days` : "—"}</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}></td>
+            </tr>
+            <tr>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "left", color: "var(--ink-muted)" }}>Blended Rate</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right", color: "var(--ink-muted)" }}>{`$${Math.round(blendedRate)}/day`}</td>
+              <td style={{ ...cell, borderBottom: "none", textAlign: "right" }}></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* ── Sections ── */}

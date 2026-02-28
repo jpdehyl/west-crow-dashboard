@@ -21,6 +21,18 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
   const [bid, clients, projects] = await Promise.all([getBid(id), getClients(), getProjects()])
   if (!bid) notFound()
 
+  // Auto-fetch documents from Dropbox if not cached yet
+  if (bid && bid.dropbox_folder && (!bid.documents || (bid.documents as any[]).length === 0)) {
+    try {
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+      const docsRes = await fetch(`${baseUrl}/api/bids/${id}/documents`, { cache: 'no-store' })
+      if (docsRes.ok) {
+        const docsData = await docsRes.json()
+        if (docsData.documents) bid.documents = docsData.documents
+      }
+    } catch { /* non-fatal */ }
+  }
+
   const client = (clients as any[]).find((c: any) => c.id === bid.client_id)
   const days = daysUntil(bid.deadline)
   const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)

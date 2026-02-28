@@ -49,7 +49,7 @@ export default function PipelinePage() {
     try {
       const [dbx, cal] = await Promise.all([
         fetch('/api/sync/dropbox', { method: 'POST' }).then(r => r.json()),
-        fetch('/api/sync/calendar', { method: 'POST' }).then(r => r.json()),
+        fetch('/api/sync/calendar', { method: 'POST' }).then(r => r.json()).catch(() => ({ error: 'calendar skipped' })),
       ])
       const msg = `Dropbox: +${dbx.created ?? 0} new, ${dbx.updated ?? 0} updated · Calendar: +${cal.created ?? 0} new, ${cal.matched ?? 0} matched`
       setSyncMsg(msg)

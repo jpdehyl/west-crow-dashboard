@@ -31,15 +31,21 @@ export default function AddDocumentForm({ bidId }: { bidId: string }) {
     if (!name.trim() || !url.trim()) return
     setSaving(true)
     try {
-      await fetch(`/api/bids/${bidId}/documents`, {
+      const res = await fetch(`/api/bids/${bidId}/documents`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, url, type }),
       })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || "Failed to add document")
+      }
+
       setName(""); setUrl(""); setType("drawings"); setOpen(false)
       router.refresh()
-    } catch {
-      alert("Failed to add document")
+    } catch (e: any) {
+      alert(e?.message || "Failed to add document")
     } finally {
       setSaving(false)
     }

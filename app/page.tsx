@@ -49,10 +49,36 @@ type FinancialAnalytics = {
   }
 }
 
+type CalendarEvent = {
+  title: string
+  date: string
+  daysUntil: number
+  bucket: "critical" | "soon" | "upcoming" | "later"
+}
+
+const BUCKETS: { key: CalendarEvent["bucket"]; emoji: string; label: string }[] = [
+  { key: "critical", emoji: "🔴", label: "Critical" },
+  { key: "soon",     emoji: "🟡", label: "Soon" },
+  { key: "upcoming", emoji: "🟢", label: "Upcoming" },
+  { key: "later",    emoji: "⚪", label: "Later" },
+]
+
 export default function DashboardPage() {
   const [financials, setFinancials] = useState<FinancialAnalytics | null>(null)
   const [bids, setBids] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [calEvents, setCalEvents] = useState<CalendarEvent[]>([])
+  const [calLoading, setCalLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/calendar/upcoming")
+      .then((r) => r.json())
+      .then((data) => {
+        setCalEvents(Array.isArray(data) ? data : [])
+        setCalLoading(false)
+      })
+      .catch(() => setCalLoading(false))
+  }, [])
 
   useEffect(() => {
     fetch("/api/analytics")
@@ -117,6 +143,53 @@ export default function DashboardPage() {
   return (
     <div>
       <p style={{ fontSize: "13px", color: "var(--ink-faint)", fontWeight: 400, marginBottom: "1.25rem" }}>{dateStr}</p>
+
+      {/* Bid Deadline Queue */}
+      {(calLoading || calEvents.length > 0) && (
+        <div style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>
+            Bid Deadline Queue
+          </h2>
+          {calLoading && [...Array(3)].map((_, i) => (
+            <div key={i} style={{ height: 32, width: "100%", background: "#f7f2e9", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s ease-in-out infinite" }} />
+          ))}
+          {!calLoading && BUCKETS.map(({ key, emoji, label }) => {
+            const items = calEvents.filter(e => e.bucket === key)
+            if (items.length === 0) return null
+            return (
+              <div key={key} style={{ marginBottom: "0.75rem" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: "0.35rem" }}>
+                  {emoji} {label}
+                </p>
+                {items.map((ev, i) => (
+                  <div key={`${ev.title}-${ev.date}`} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "0.4rem 0",
+                    borderBottom: i < items.length - 1 ? "1px solid var(--border)" : "none",
+                  }}>
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                      {ev.title}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0, marginLeft: "0.75rem" }}>
+                      <span style={{ fontSize: "12px", color: "var(--ink-faint)" }}>
+                        {new Date(ev.date + "T12:00:00").toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
+                      </span>
+                      <span style={{
+                        fontSize: "11px", fontWeight: 600, minWidth: "2.2rem", textAlign: "center",
+                        color: key === "critical" ? "var(--terra)" : key === "soon" ? "var(--gold)" : "var(--ink-muted)",
+                        background: key === "critical" ? "var(--terra-light)" : key === "soon" ? "var(--gold-light)" : "var(--border)",
+                        padding: "2px 6px", borderRadius: "4px",
+                      }}>
+                        {ev.daysUntil === 0 ? "today" : `${ev.daysUntil}d`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="kpi-grid" style={{ display: "grid", gap: "0.75rem", marginBottom: "1.5rem" }}>
         <div style={{

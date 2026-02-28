@@ -75,8 +75,8 @@ export default function PipelinePage() {
     let out = [...bids]
     const q = search.toLowerCase()
     out = out.filter(b =>
-      String(b.project_name ?? '').toLowerCase().includes(q) ||
-      String(b.client ?? '').toLowerCase().includes(q)
+      String(b.project_name ?? b.projectName ?? b.name ?? '').toLowerCase().includes(q) ||
+      String(b.client ?? b.client_name ?? b.clientName ?? '').toLowerCase().includes(q)
     )
     if (statusFilter !== 'all') out = out.filter(b => b.status === statusFilter)
     out.sort((a, b) => {

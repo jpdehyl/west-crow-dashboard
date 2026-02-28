@@ -2,6 +2,7 @@ import { getBid } from "@/lib/sheets"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import EstimateBuilder from "@/components/EstimateBuilder"
+import ClarkQuestionsCard from "@/components/ClarkQuestionsCard"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +19,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   // If clark_draft exists in estimate_data, confidence is in meta.clark_confidence
   const clarkDraft = saved?.clark_draft ?? null
   const clarkConfidence: number | null = saved?.meta?.clark_confidence ?? clarkDraft?.confidence ?? null
+  const showClarkQuestions = saved?.meta?.status === "clark_questions"
 
   return (
     <div>
@@ -71,12 +73,24 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      <EstimateBuilder
-        bidId={id}
-        bidName={bid.project_name}
-        saved={saved}
-        estimateSheetUrl={bid.estimate_sheet_url ?? null}
-      />
+      {showClarkQuestions && (
+        <ClarkQuestionsCard
+          bidId={id}
+          estimateData={bid.estimate_data ?? null}
+        />
+      )}
+
+      <div
+        style={showClarkQuestions ? { opacity: 0.45, pointerEvents: "none", filter: "grayscale(0.35)" } : undefined}
+        aria-disabled={showClarkQuestions}
+      >
+        <EstimateBuilder
+          bidId={id}
+          bidName={bid.project_name}
+          saved={saved}
+          estimateSheetUrl={bid.estimate_sheet_url ?? null}
+        />
+      </div>
     </div>
   )
 }

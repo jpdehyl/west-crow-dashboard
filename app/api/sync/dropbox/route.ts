@@ -1,6 +1,6 @@
 // POST /api/sync/dropbox  (GET also accepted for Vercel cron)
-// Syncs /West Crow/ Dropbox folders into Supabase bids table.
-// Handles expired token gracefully — returns {error} with 200.
+// Syncs /West Crow Estimators/ Dropbox folders into Supabase bids table.
+// Uses refresh token for permanent auth — never expires.
 
 import { NextResponse } from 'next/server'
 import { getBids, createBid, updateBid } from '@/lib/sheets'
@@ -8,9 +8,35 @@ import { getBids, createBid, updateBid } from '@/lib/sheets'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const DROPBOX_BASE = '/West Crow'
+const DROPBOX_BASE = '/West Crow Estimators'
 
-// Map subfolder names → document types
+async function getAccessToken(): Promise<string> {
+  const refreshToken = process.env.DROPBOX_REFRESH_TOKEN
+  const appKey = process.env.DROPBOX_APP_KEY
+  const appSecret = process.env.DROPBOX_APP_SECRET
+
+  if (refreshToken && appKey && appSecret) {
+    const res = await fetch('https://api.dropbox.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: appKey,
+        client_secret: appSecret,
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.access_token
+    }
+  }
+
+  const token = process.env.DROPBOX_TOKEN
+  if (!token) throw new Error('No Dropbox credentials configured')
+  return token
+}
+
 const DOC_TYPE_MAP: Record<string, string> = {
   'Bid Documents': 'bid_docs',
   'Bid Docs':      'bid_docs',
@@ -24,6 +50,9 @@ function isSkipped(name: string): boolean {
   if (name.startsWith('Template')) return true
   if (name.startsWith('ARCHIVE')) return true
   if (name.startsWith('1111')) return true
+  if (name === 'Zoom Recordings') return true
+  if (name === 'Training') return true
+  if (name === 'Demo Quote Sheet') return true
   return false
 }
 
@@ -46,18 +75,10 @@ async function dbxList(path: string, token: string) {
     },
     body: JSON.stringify({ path, recursive: false }),
   })
-
-  if (res.status === 401) {
-    const body = await res.json().catch(() => ({}))
-    const tag = body?.error?.['.tag'] ?? ''
-    throw Object.assign(new Error('expired_token'), { expired: true, tag })
-  }
-
   if (!res.ok) {
     const err = await res.text()
     throw new Error(`Dropbox list_folder failed for ${path}: ${err}`)
   }
-
   const data = await res.json()
   return data.entries as any[]
 }
@@ -65,8 +86,12 @@ async function dbxList(path: string, token: string) {
 export async function GET() { return POST() }
 
 export async function POST() {
-  const token = process.env.DROPBOX_TOKEN
-  if (!token) return NextResponse.json({ error: 'DROPBOX_TOKEN not set' }, { status: 500 })
+  let token: string
+  try {
+    token = await getAccessToken()
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e.message) }, { status: 500 })
+  }
 
   const summary = { created: 0, updated: 0, skipped: 0, error: undefined as string | undefined }
 
@@ -74,9 +99,6 @@ export async function POST() {
   try {
     entries = await dbxList(DROPBOX_BASE, token)
   } catch (e: any) {
-    if (e.expired) {
-      return NextResponse.json({ error: 'DROPBOX_TOKEN expired — refresh needed' })
-    }
     return NextResponse.json({ error: String(e.message) }, { status: 502 })
   }
 
@@ -91,13 +113,11 @@ export async function POST() {
 
     const id = slugify(name)
 
-    // List subfolders for document mapping
     let subEntries: any[] = []
     try {
       subEntries = await dbxList(path, token)
-    } catch (e: any) {
-      if (e.expired) return NextResponse.json({ error: 'DROPBOX_TOKEN expired — refresh needed' })
-      // Non-fatal — just skip docs for this folder
+    } catch {
+      // Non-fatal
     }
 
     const documents = subEntries
@@ -119,7 +139,6 @@ export async function POST() {
       })
       summary.created++
     } else {
-      // Only update documents — never overwrite manually-set bid fields
       await updateBid(id, { documents, dropbox_folder: path })
       summary.updated++
     }

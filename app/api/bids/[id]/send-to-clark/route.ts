@@ -143,6 +143,39 @@ interface ClarkQuestionOutput {
   }
 }
 
+class ClarkParseError extends Error {
+  raw: string
+
+  constructor(message: string, raw: string) {
+    super(message)
+    this.name = "ClarkParseError"
+    this.raw = raw
+  }
+}
+
+function parseClarkResponse(text: string): ClarkQuestionOutput {
+  const withoutCodeFences = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim()
+
+  const firstBrace = withoutCodeFences.indexOf("{")
+  const lastBrace = withoutCodeFences.lastIndexOf("}")
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    throw new ClarkParseError("Clark returned invalid JSON", text)
+  }
+
+  const extracted = withoutCodeFences.slice(firstBrace, lastBrace + 1)
+
+  try {
+    return JSON.parse(extracted) as ClarkQuestionOutput
+  } catch {
+    throw new ClarkParseError("Clark could not parse response", text)
+  }
+}
+
 async function analyzeWithClaude(
   docPayloads: { filename: string; mediaType: string; base64: string }[],
   bidName: string,
@@ -248,12 +281,8 @@ async function analyzeWithClaude(
   }
 
   const result = await response.json()
-  const text   = result.content?.[0]?.text ?? "{}"
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error("Clark returned invalid JSON")
-
-  return JSON.parse(jsonMatch[0]) as ClarkQuestionOutput
+  const text = result.content?.[0]?.text ?? "{}"
+  return parseClarkResponse(text)
 }
 
 async function loadClarkKnowledge(): Promise<string> {
@@ -392,6 +421,34 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     try {
       clarkOutput = await analyzeWithClaude(docPayloads, bidName || bid.project_name, extraNote || "")
     } catch (e: any) {
+      if (e instanceof ClarkParseError) {
+        console.error("[send-to-clark] Failed to parse Claude response", {
+          bidId: id,
+          message: e.message,
+          raw: e.raw,
+        })
+
+        await updateBid(id, {
+          status: "active",
+          estimate_data: JSON.stringify({
+            ...existingEstimate,
+            meta: {
+              ...(existingEstimate.meta ?? {}),
+              status: "active",
+              clark_notes: "⚠️ Clark could not parse response",
+              prepared_by: "Clark",
+              prepared_at: new Date().toISOString(),
+              assumptions: existingEstimate.meta?.assumptions ?? [],
+            },
+          }),
+        })
+
+        return NextResponse.json(
+          { error: "Clark could not parse response", raw: e.raw.slice(0, 500) },
+          { status: 502 }
+        )
+      }
+
       await updateBid(id, {
         estimate_data: JSON.stringify({
           ...existingEstimate,

@@ -55,7 +55,7 @@ function isDropboxSharedLink(value: string): boolean {
 
 async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
   const body = isDropboxSharedLink(pathOrLink)
-    ? { path: "", recursive: true, shared_link: { url: pathOrLink } }
+    ? { path: "", recursive: false, shared_link: { url: pathOrLink } }
     : { path: pathOrLink, recursive: true }
 
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {

@@ -25,11 +25,6 @@ function getState(documents: DocEntry[], estimateData: string | null, bidStatus:
     return "view_only"
   }
 
-  const hasDrawings = documents.some(d => d.type === "drawings")
-  const hasScope    = documents.some(d => d.type === "bid_docs")
-
-  if (!hasDrawings || !hasScope) return "no_quantities"
-
   if (!estimateData) return "ready"
 
   try {

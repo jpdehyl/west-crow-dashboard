@@ -124,22 +124,56 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
         </div>
       )}
 
+      {/* Dropbox Folder */}
+      {(bid as any).dropbox_folder && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>Dropbox Folder</p>
+          <a href={(bid as any).dropbox_folder} target="_blank" rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", fontSize: "13px", color: "var(--accent)", textDecoration: "none", padding: "0.5rem 0.85rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "7px" }}>
+            <span>📁</span>
+            <span style={{ fontFamily: "monospace", fontSize: "12px" }}>{(bid as any).dropbox_folder.replace('https://www.dropbox.com', '')}</span>
+            <span>↗</span>
+          </a>
+        </div>
+      )}
+
       {/* Documents */}
       <div style={{ marginBottom: "1.5rem" }}>
         <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
-        {bid.documents && bid.documents.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
+        {bid.documents && bid.documents.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", marginBottom: "0.75rem" }}>
             {(bid.documents as any[]).map((doc: any, i: number) => (
-              <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents.length - 1 ? "1px solid var(--border)" : "none", textDecoration: "none", color: "var(--ink)", fontSize: "14px", fontWeight: 500 }}
-                className="row-hover">
-                <span>{DOC_LABEL[doc.type] || doc.name}</span>
-                <span style={{ fontSize: "12px", color: "var(--accent)" }}>Open ↗</span>
-              </a>
+              <div key={i}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents.length - 1 ? "1px solid var(--border)" : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span style={{ fontSize: "13px", color: "var(--ink-faint)" }}>
+                    {doc.type === "drawings" ? "📐" : doc.type === "bid_docs" ? "📋" : doc.type === "hazmat" ? "☣️" : doc.type === "quote_sheet" ? "💲" : "📄"}
+                  </span>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{DOC_LABEL[doc.type] || doc.name}</span>
+                </div>
+                <a href={`https://www.dropbox.com/home${doc.url}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none", padding: "0.3rem 0.7rem", border: "1px solid var(--border)", borderRadius: "5px", whiteSpace: "nowrap" }}>
+                  Open in Dropbox ↗
+                </a>
+              </div>
             ))}
           </div>
+        ) : (
+          <p style={{ fontSize: "13px", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>No documents attached yet.</p>
         )}
         <AddDocumentForm bidId={bid.id} />
+      </div>
+
+      {/* Estimate link */}
+      <div style={{ marginBottom: "1.5rem", padding: "1rem 1.25rem", background: "var(--bg-subtle)", borderRadius: "8px", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)", marginBottom: "0.2rem" }}>Estimate Builder</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-faint)" }}>Build and review the full estimate for this bid</p>
+        </div>
+        <Link href={`/bids/${bid.id}/estimate`}
+          style={{ padding: "0.55rem 1.1rem", background: "var(--ink)", color: "var(--bg)", borderRadius: "7px", fontSize: "13px", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
+          Open Estimate →
+        </Link>
       </div>
 
       {/* Activity */}

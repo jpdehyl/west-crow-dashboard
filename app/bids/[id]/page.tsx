@@ -24,10 +24,12 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
 
 
   const client = (clients as any[]).find((c: any) => c.id === bid.client_id)
+  const timeline = Array.isArray((bid as any).timeline) ? ((bid as any).timeline as any[]) : []
+  const documents = Array.isArray((bid as any).documents) ? ((bid as any).documents as any[]) : []
   const days = daysUntil(bid.deadline)
   const urgent = days <= 7 && !['won','lost','no-bid'].includes(bid.status)
-  const completedStages = new Set((bid.timeline as any[]).map((e: any) => e.stage))
-  const currentStageIdx = Math.max(...(bid.timeline as any[]).map((e: any) => STAGE_ORDER.indexOf(e.stage)))
+  const completedStages = new Set(timeline.map((e: any) => e.stage))
+  const currentStageIdx = timeline.length > 0 ? Math.max(...timeline.map((e: any) => STAGE_ORDER.indexOf(e.stage))) : -1
   const linkedProject = (projects as any[]).find((project: any) => project.bid_id === bid.id)
 
   return (
@@ -55,7 +57,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
             <EstimateStatusButton
               bidId={bid.id}
               bidName={bid.project_name}
-              documents={(bid.documents ?? []) as any[]}
+              documents={documents}
               estimateData={(bid as any).estimate_data ?? null}
               dropboxFolder={(bid as any).dropbox_folder ?? ""}
               bidStatus={bid.status}
@@ -69,7 +71,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       {/* Timeline strip */}
       <div style={{ display: "flex", alignItems: "flex-start", margin: "1.25rem 0", padding: "1rem", background: "var(--bg-subtle)", borderRadius: "10px", border: "1px solid var(--border)" }}>
         {STAGE_ORDER.map((stage, i) => {
-          const event = (bid.timeline as any[]).find((e: any) => e.stage === stage)
+          const event = timeline.find((e: any) => e.stage === stage)
           const isComplete = completedStages.has(stage)
           const isCurrent = i === currentStageIdx
           const isLast = i === STAGE_ORDER.length - 1
@@ -142,11 +144,11 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       {/* Documents */}
       <div style={{ marginBottom: "1.5rem" }}>
         <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Documents</p>
-        {bid.documents && bid.documents.length > 0 ? (
+        {documents.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden", marginBottom: "0.75rem" }}>
-            {(bid.documents as any[]).map((doc: any, i: number) => (
+            {documents.map((doc: any, i: number) => (
               <div key={i}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < bid.documents.length - 1 ? "1px solid var(--border)" : "none" }}>
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.9rem 1.25rem", background: "var(--bg)", borderBottom: i < documents.length - 1 ? "1px solid var(--border)" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                   <span style={{ fontSize: "13px", color: "var(--ink-faint)" }}>
                     {doc.type === "drawings" ? "📐" : doc.type === "bid_docs" ? "📋" : doc.type === "hazmat" ? "☣️" : doc.type === "quote_sheet" ? "💲" : "📄"}
@@ -188,8 +190,8 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       <div>
         <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.75rem" }}>Activity Log</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {[...(bid.timeline as any[])].reverse().map((event: any, i: number) => (
-            <div key={i} style={{ display: "flex", gap: "1rem", padding: "0.9rem 0", borderBottom: i < bid.timeline.length - 1 ? "1px solid var(--border)" : "none", alignItems: "flex-start" }}>
+          {[...timeline].reverse().map((event: any, i: number) => (
+            <div key={i} style={{ display: "flex", gap: "1rem", padding: "0.9rem 0", borderBottom: i < timeline.length - 1 ? "1px solid var(--border)" : "none", alignItems: "flex-start" }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", marginTop: "5px", flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)", marginRight: "0.5rem" }}>{STAGE_LABEL[event.stage as BidStage] ?? event.stage}</span>

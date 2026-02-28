@@ -21,17 +21,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
   const [bid, clients, projects] = await Promise.all([getBid(id), getClients(), getProjects()])
   if (!bid) notFound()
 
-  // Auto-fetch documents from Dropbox if not cached yet
-  if (bid && bid.dropbox_folder && (!bid.documents || (bid.documents as any[]).length === 0)) {
-    try {
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
-      const docsRes = await fetch(`${baseUrl}/api/bids/${id}/documents`, { cache: 'no-store' })
-      if (docsRes.ok) {
-        const docsData = await docsRes.json()
-        if (docsData.documents) bid.documents = docsData.documents
-      }
-    } catch { /* non-fatal */ }
-  }
+
 
   const client = (clients as any[]).find((c: any) => c.id === bid.client_id)
   const days = daysUntil(bid.deadline)
@@ -171,7 +161,13 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: "13px", color: "var(--ink-faint)", marginBottom: "0.75rem" }}>No documents attached yet.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <p style={{ fontSize: "13px", color: "var(--ink-faint)" }}>No documents cached yet.</p>
+            {bid.dropbox_folder && (
+              <a href={`https://www.dropbox.com/home${bid.dropbox_folder}`} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: "13px", color: "var(--accent)", textDecoration: "none" }}>📂 Open Dropbox folder ↗</a>
+            )}
+          </div>
         )}
         <AddDocumentForm bidId={bid.id} />
       </div>

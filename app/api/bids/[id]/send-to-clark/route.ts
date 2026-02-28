@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getBid, updateBid, addBidTimeline } from "@/lib/sheets"
 import { DEFAULT_SECTIONS, DEFAULT_SUBTRADES, DEFAULT_CONFIG } from "@/lib/estimate-data"
 import type { Section, EstimateMeta } from "@/lib/estimate-data"
+import { extractDropboxPath, isDropboxSharedLink, isDropboxUrl } from "@/lib/dropbox"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
@@ -49,18 +50,108 @@ async function getTemporaryLink(path: string, token: string): Promise<string | n
   return data.link ?? null
 }
 
-async function listFolderRecursive(path: string, token: string): Promise<any[]> {
+function buildDropboxListBody(pathOrLink: string): { path: string; recursive: boolean; shared_link?: { url: string } } {
+  const normalizedPath = extractDropboxPath(pathOrLink)
+  if (normalizedPath) return { path: normalizedPath, recursive: true }
+  if (isDropboxSharedLink(pathOrLink)) return { path: "", recursive: true, shared_link: { url: pathOrLink } }
+  return { path: pathOrLink, recursive: true }
+}
+
+async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
+  const body = buildDropboxListBody(pathOrLink)
+
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ path, recursive: true }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) return []
   const data = await res.json()
-  return data.entries ?? []
+
+  let entries = data.entries ?? []
+  let cursor = data.cursor
+
+  while (data.has_more && cursor) {
+    const nextRes = await fetch("https://api.dropboxapi.com/2/files/list_folder/continue", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cursor }),
+    })
+    if (!nextRes.ok) break
+    const nextData = await nextRes.json()
+    entries = entries.concat(nextData.entries ?? [])
+    cursor = nextData.cursor
+    if (!nextData.has_more) break
+  }
+
+  return entries
+}
+
+async function getDropboxMetadata(pathOrLink: string, token: string): Promise<any | null> {
+  const normalizedPath = extractDropboxPath(pathOrLink)
+  const body = normalizedPath
+    ? { path: normalizedPath }
+    : isDropboxSharedLink(pathOrLink)
+      ? { path: "", shared_link: { url: pathOrLink } }
+      : { path: pathOrLink }
+
+  const res = await fetch("https://api.dropboxapi.com/2/files/get_metadata", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) return null
+  return await res.json()
+}
+
+function filenameFromUrl(url: string): string {
+  const cleaned = url.split("?")[0].split("#")[0]
+  const piece = cleaned.split("/").filter(Boolean).pop() ?? "document"
+  try { return decodeURIComponent(piece) } catch { return piece }
+}
+
+async function searchFolderByProjectName(projectName: string, token: string): Promise<string | null> {
+  if (!projectName) return null
+
+  const res = await fetch("https://api.dropboxapi.com/2/files/search_v2", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: projectName,
+      options: {
+        path: "",
+        max_results: 25,
+        file_status: "active",
+        filename_only: true,
+      },
+    }),
+  })
+
+  if (!res.ok) return null
+  const data = await res.json()
+  const matches = (data.matches ?? []) as any[]
+  const folders = matches
+    .map((match) => match.metadata?.metadata)
+    .filter((metadata) => metadata?.[".tag"] === "folder" && typeof metadata.path_display === "string")
+
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
+  const normalizedProject = normalize(projectName)
+  const exact = folders.find((folder) => normalize(String(folder.name ?? "")) === normalizedProject)
+
+  return exact?.path_display ?? folders[0]?.path_display ?? null
 }
 
 // ── File helpers ──────────────────────────────────────────────────────────────
@@ -237,7 +328,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const bid = await getBid(id) as any
   if (!bid) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const folder: string = bid.dropbox_folder || dropboxFolder || ""
+  const folder: string = dropboxFolder || bid.dropbox_folder || ""
 
   // Mark clark_working
   const existingEstimate = bid.estimate_data
@@ -271,39 +362,71 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const bidDocs: { name: string; url: string; type: string }[] = documents ?? bid.documents ?? []
 
   for (const doc of bidDocs) {
-    if (doc.url && doc.url.startsWith("/")) {
-      try {
-        const subEntries = await listFolderRecursive(doc.url, token)
-        for (const entry of subEntries) {
-          if (entry[".tag"] === "file" && isSupported(entry.name)) {
-            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.path_display })
-          }
-        }
-      } catch {
-        if (isSupported(doc.name)) {
-          filesToAnalyze.push({ filename: doc.name, dropboxPath: doc.url })
+    if (!doc.url) continue
+
+    const dropboxCandidate = doc.url.startsWith("/") || isDropboxUrl(doc.url)
+    if (!dropboxCandidate) continue
+
+    try {
+      const subEntries = await listFolderRecursive(doc.url, token)
+      for (const entry of subEntries) {
+        if (entry[".tag"] === "file" && isSupported(entry.name)) {
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
         }
       }
+      if (subEntries.length > 0) continue
+    } catch {}
+
+    const metadata = await getDropboxMetadata(doc.url, token)
+    if (metadata?.[".tag"] === "file") {
+      const filename = metadata.name ?? doc.name ?? filenameFromUrl(doc.url)
+      if (isSupported(filename)) {
+        filesToAnalyze.push({ filename, dropboxPath: metadata.id ?? metadata.path_display })
+      }
+    } else if (isSupported(doc.name ?? "")) {
+      const normalizedPath = extractDropboxPath(doc.url) ?? doc.url
+      filesToAnalyze.push({ filename: doc.name, dropboxPath: normalizedPath })
     }
   }
 
   // Fallback: list top-level folder
-  if (filesToAnalyze.length === 0 && folder && folder.startsWith("/")) {
+  if (filesToAnalyze.length === 0 && folder && (folder.startsWith("/") || isDropboxUrl(folder))) {
     try {
       const entries = await listFolderRecursive(folder, token)
       for (const entry of entries) {
         if (entry[".tag"] === "file" && isSupported(entry.name)) {
-          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.path_display })
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
         }
       }
     } catch {}
   }
 
+  // Recovery fallback: discover correct folder by bid/project name if configured folder is stale
+  if (filesToAnalyze.length === 0) {
+    const discoverName = bidName || bid.project_name || ""
+    const discoveredFolder = await searchFolderByProjectName(discoverName, token)
+    if (discoveredFolder) {
+      try {
+        const entries = await listFolderRecursive(discoveredFolder, token)
+        for (const entry of entries) {
+          if (entry[".tag"] === "file" && isSupported(entry.name)) {
+            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
+          }
+        }
+        if (filesToAnalyze.length > 0) {
+          await updateBid(id, { dropbox_folder: discoveredFolder })
+        }
+      } catch {}
+    }
+  }
+
+  const deduped = Array.from(new Map(filesToAnalyze.map(file => [file.dropboxPath, file])).values())
+
   // Download and encode files (max 10, 20MB each)
   const docPayloads: { filename: string; mediaType: string; base64: string }[] = []
   const errors: string[] = []
 
-  for (const file of filesToAnalyze.slice(0, 10)) {
+  for (const file of deduped.slice(0, 10)) {
     try {
       const link = await getTemporaryLink(file.dropboxPath, token)
       if (!link) { errors.push(`No link for ${file.filename}`); continue }

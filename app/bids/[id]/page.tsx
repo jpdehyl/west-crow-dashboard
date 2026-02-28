@@ -8,6 +8,7 @@ import EditBidForm from "@/components/EditBidForm"
 import EstimateStatusButton from "@/components/EstimateStatusButton"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { toDropboxWebUrl } from "@/lib/dropbox"
 
 export const revalidate = 60
 
@@ -132,7 +133,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
       {(bid as any).dropbox_folder && (
         <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 500, marginBottom: "0.5rem" }}>Dropbox Folder</p>
-          <a href={(bid as any).dropbox_folder} target="_blank" rel="noopener noreferrer"
+          <a href={toDropboxWebUrl((bid as any).dropbox_folder)} target="_blank" rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", fontSize: "13px", color: "var(--accent)", textDecoration: "none", padding: "0.5rem 0.85rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "7px" }}>
             <span>📁</span>
             <span style={{ fontFamily: "monospace", fontSize: "12px" }}>{(bid as any).dropbox_folder.replace('https://www.dropbox.com', '')}</span>
@@ -155,7 +156,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
                   </span>
                   <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>{DOC_LABEL[doc.type] || doc.name}</span>
                 </div>
-                <a href={`https://www.dropbox.com/home${doc.url}`} target="_blank" rel="noopener noreferrer"
+                <a href={toDropboxWebUrl(doc.url)} target="_blank" rel="noopener noreferrer"
                   style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none", padding: "0.3rem 0.7rem", border: "1px solid var(--border)", borderRadius: "5px", whiteSpace: "nowrap" }}>
                   Open in Dropbox ↗
                 </a>
@@ -166,7 +167,7 @@ export default async function BidDetailPage({ params }: { params: Promise<{ id: 
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
             <p style={{ fontSize: "13px", color: "var(--ink-faint)" }}>No documents cached yet.</p>
             {bid.dropbox_folder && (
-              <a href={`https://www.dropbox.com/home${bid.dropbox_folder}`} target="_blank" rel="noopener noreferrer"
+              <a href={toDropboxWebUrl(bid.dropbox_folder)} target="_blank" rel="noopener noreferrer"
                 style={{ fontSize: "13px", color: "var(--accent)", textDecoration: "none" }}>📂 Open Dropbox folder ↗</a>
             )}
           </div>

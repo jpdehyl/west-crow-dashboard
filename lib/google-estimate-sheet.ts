@@ -34,8 +34,8 @@ function defaultUnitsPerDay(section: string) {
 }
 
 export async function createClarkEstimateSheet(projectName: string, lineItems: ClarkPricedLineItem[], bidId?: string) {
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const clientId = process.env.GMAIL_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET
   const refreshToken = process.env.GMAIL_REFRESH_TOKEN
   if (!clientId || !clientSecret || !refreshToken) return null
 

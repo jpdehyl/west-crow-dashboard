@@ -33,7 +33,7 @@ function defaultUnitsPerDay(section: string) {
   return 140
 }
 
-export async function createClarkEstimateSheet(projectName: string, lineItems: ClarkPricedLineItem[]) {
+export async function createClarkEstimateSheet(projectName: string, lineItems: ClarkPricedLineItem[], bidId?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const refreshToken = process.env.GMAIL_REFRESH_TOKEN
@@ -138,6 +138,31 @@ export async function createClarkEstimateSheet(projectName: string, lineItems: C
     valueInputOption: "USER_ENTERED",
     requestBody: { values },
   })
+
+  // Add hidden Config sheet with bidId for Apps Script webhook
+  if (bidId) {
+    const addSheetResponse = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: "Config" } } }],
+      },
+    })
+    const configSheetId = addSheetResponse.data.replies?.[0]?.addSheet?.properties?.sheetId
+    if (configSheetId !== undefined && configSheetId !== null) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "Config!A1:A2",
+        valueInputOption: "RAW",
+        requestBody: { values: [["bidId"], [bidId]] },
+      })
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{ updateSheetProperties: { properties: { sheetId: configSheetId, hidden: true }, fields: "hidden" } }],
+        },
+      })
+    }
+  }
 
   return { spreadsheetId, spreadsheetUrl }
 }

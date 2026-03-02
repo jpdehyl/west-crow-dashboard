@@ -164,7 +164,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     clark_confidence: clarkOutput.confidence,
   }
 
-  const sheetResult = await createClarkEstimateSheet(bid.project_name, clarkOutput.line_items ?? [], id).catch(() => null)
+  let sheetResult = null; try { sheetResult = await createClarkEstimateSheet(bid.project_name, clarkOutput.line_items ?? [], id) } catch(sheetErr) { console.error("[SHEET ERROR]", sheetErr) }
 
   await updateBid(id, {
     estimate_data: JSON.stringify({

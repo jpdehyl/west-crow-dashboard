@@ -100,47 +100,39 @@ const MAX_FILE_SIZE  = 20 * 1024 * 1024 // 20MB
 
 function isDemoRelevant(filename: string, pathDisplay?: string): boolean {
   const lc = filename.toLowerCase()
-  const pathLc = (pathDisplay ?? "").toLowerCase()
+  const ext = lc.split('.').pop() ?? ''
 
-  // Always include files in Hazmat or Bid Documents folders
-  if (pathLc.includes("/hazmat/") || pathLc.includes("/bid documents/")) return true
+  // Always include images (site photos) and text files
+  if (['jpg','jpeg','png','gif','webp','txt','csv','xlsx','xls'].includes(ext)) return true
 
-  // Always include non-drawing docs (scope letters, hazmat, etc.)
-  if (lc.includes("scope") || lc.includes("ift") || lc.includes("tender") ||
-      lc.includes("rfp") || lc.includes("instructions")) return true
-  if (lc.includes("hazmat") || lc.includes("hazardous") || lc.includes("asbestos") ||
-      lc.includes("pha") || lc.includes("abatement") || lc.includes("survey")) return true
+  // For non-PDFs that aren't images, include by default
+  if (ext !== 'pdf') return true
 
-  // Always include demo/demolition drawings
-  if (lc.includes("demo") || lc.includes("demolition")) return true
-  // d-1, d-2, d1., d2., d3. patterns
-  if (/\bd-\d/.test(lc) || /\bd\d+\./.test(lc)) return true
-  if (lc.includes("rcp") || lc.includes("reflected ceiling") ||
-      lc.includes("rc-") || lc.includes("ceiling demo")) return true
+  // For PDFs: check path context first
+  if (pathDisplay) {
+    const pd = pathDisplay.toLowerCase()
+    // Always include if in Hazmat or Bid Documents folder
+    if (pd.includes('/hazmat/') || pd.includes('/bid documents/') || pd.includes('/bid docs/')) return true
+    // Exclude if in clearly irrelevant folders
+    if (pd.includes('/electrical/') || pd.includes('/mechanical/') || pd.includes('/plumbing/')) return false
+  }
 
-  // Filter out known-irrelevant drawing types
+  // Check filename for relevant keywords
+  const relevant = ['demo', 'demolition', 'rcp', 'reflected ceiling', 'hazmat', 'hazardous',
+    'asbestos', 'abatement', 'survey', 'scope', 'ift', 'tender', 'rfp', 'instruction',
+    'spec', 'addend', 'invitation']
+  if (relevant.some(k => lc.includes(k))) return true
 
-  // Electrical: starts with "e-" or "elec" or contains "electrical"
-  if (/^e-/.test(lc) || /^elec/.test(lc) || lc.includes("electrical")) return false
+  // Exclude clearly irrelevant PDF drawing types by prefix
+  const irrelevantPrefixes = ['e-', 'elec-', 'm-', 'mech-', 'p-', 'plumb-', 'fp-', 'id-', 'c-', 'l-', 'str-']
+  const basename = lc.split('/').pop() ?? lc
+  if (irrelevantPrefixes.some(p => basename.startsWith(p))) {
+    // But include if it also mentions demo
+    if (lc.includes('demo')) return true
+    return false
+  }
 
-  // Mechanical/HVAC/Plumbing: starts with "m-", "mech", "p-" or contains keywords
-  if (/^m-/.test(lc) || /^mech/.test(lc) || lc.includes("mechanical") ||
-      lc.includes("hvac") || lc.includes("plumbing") || /^p-/.test(lc)) return false
-
-  // Finish/Interior design
-  if (lc.includes("finish") || lc.includes("fp-") || lc.includes("interior design") ||
-      lc.includes("id-") || lc.includes("furniture") || lc.includes("ffl")) return false
-
-  // Structural (demo already returned true above, so these are non-demo structural)
-  if (/^s-/.test(lc) || /^str-/.test(lc)) return false
-
-  // Civil
-  if (/^c-/.test(lc) || lc.includes("civil")) return false
-
-  // Landscape
-  if (/^l-/.test(lc) || lc.includes("landscape")) return false
-
-  // When uncertain, INCLUDE (don't over-filter)
+  // Default: include unknown PDFs (better to over-include than miss docs)
   return true
 }
 

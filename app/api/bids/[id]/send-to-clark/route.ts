@@ -94,6 +94,8 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
   if (isDropboxSharedLink(pathOrLink)) {
     // Shared links don't support recursive=true, so we manually go one level deep
     const rootEntries = await listSharedLinkFolder(pathOrLink, "", token)
+    const rootFiles = rootEntries.filter((entry: any) => entry[".tag"] === "file")
+    console.log(`[CLARK] Found ${rootFiles.length} files in folder /`)
     let allEntries: any[] = []
 
     for (const entry of rootEntries) {
@@ -101,8 +103,11 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
         allEntries.push(entry)
       } else if (entry[".tag"] === "folder") {
         // Go one level into each subfolder (Bid Documents, Drawings, Hazmat, etc.)
-        const subEntries = await listSharedLinkFolder(pathOrLink, entry.path_lower ?? ("/" + entry.name), token)
-        allEntries = allEntries.concat(subEntries.filter((e: any) => e[".tag"] === "file"))
+        const folderPath = entry.path_display ?? `/${entry.name}`
+        const subEntries = await listSharedLinkFolder(pathOrLink, folderPath, token)
+        const subFiles = subEntries.filter((e: any) => e[".tag"] === "file")
+        console.log(`[CLARK] Found ${subFiles.length} files in folder ${folderPath}`)
+        allEntries = allEntries.concat(subFiles)
       }
     }
 
@@ -141,6 +146,9 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
     cursor = nextData.cursor
     if (!nextData.has_more) break
   }
+
+  const directFiles = entries.filter((entry: any) => entry[".tag"] === "file")
+  console.log(`[CLARK] Found ${directFiles.length} files in folder ${pathOrLink || "/"}`)
 
   return entries
 }
@@ -486,7 +494,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         const subEntries = await listFolderRecursive(doc.url, token)
         for (const entry of subEntries) {
           if (entry[".tag"] === "file" && isSupported(entry.name)) {
-            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display, pathDisplay: entry.path_display ?? "" })
+            if (!entry.id) continue
+            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id, pathDisplay: entry.path_display ?? "" })
           }
         }
       } catch {
@@ -503,7 +512,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       const entries = await listFolderRecursive(folder, token)
       for (const entry of entries) {
         if (entry[".tag"] === "file" && isSupported(entry.name)) {
-          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display, pathDisplay: entry.path_display ?? "" })
+          if (!entry.id) continue
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id, pathDisplay: entry.path_display ?? "" })
         }
       }
     } catch {}

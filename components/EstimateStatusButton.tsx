@@ -264,6 +264,66 @@ function StartEstimateModal({
   )
 }
 
+// ── Modal: reset estimate ─────────────────────────────────────────────────
+
+function ResetEstimateModal({ bidId, onClose, onReset }: { bidId: string; onClose: () => void; onReset: () => void }) {
+  const [resetting, setResetting] = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+
+  async function handleReset() {
+    setResetting(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/bids/${bidId}/reset`, { method: "POST" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? "Reset failed — try again")
+        setResetting(false)
+        return
+      }
+      onReset()
+    } catch {
+      setError("Network error — try again")
+      setResetting(false)
+    }
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100 }} />
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+        zIndex: 101, background: "var(--bg)", borderRadius: "14px", border: "1px solid var(--border)",
+        width: "min(440px, 94vw)", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", padding: "1.5rem",
+        display: "flex", flexDirection: "column", gap: "1rem",
+      }}>
+        <div>
+          <p style={{ fontSize: "11px", color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>Reset Estimate</p>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 500, color: "var(--ink)" }}>Delete current estimate?</h2>
+        </div>
+        <p style={{ fontSize: "13px", color: "var(--ink-muted)", lineHeight: 1.6 }}>
+          This will clear Clark&apos;s estimate data, remove the estimate sheet URL, and set the bid status back to <strong>estimating</strong>. You can re-run Clark after.
+        </p>
+        {error && (
+          <div style={{ padding: "0.65rem 0.85rem", background: "#fff5f5", border: "1px solid #f5a0a0", borderRadius: "7px", fontSize: "13px", color: "#c0392b" }}>
+            ⚠️ {error}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", paddingTop: "0.25rem", borderTop: "1px solid var(--border)" }}>
+          <button onClick={onClose} disabled={resetting}
+            style={{ padding: "0.6rem 1.1rem", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "7px", fontSize: "13px", cursor: "pointer", fontFamily: "inherit" }}>
+            Cancel
+          </button>
+          <button onClick={handleReset} disabled={resetting}
+            style={{ padding: "0.6rem 1.25rem", background: "#c0392b", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: 600, cursor: resetting ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: resetting ? 0.7 : 1 }}>
+            {resetting ? "Resetting…" : "🔄 Yes, Reset Estimate"}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function EstimateStatusButton({
@@ -277,7 +337,7 @@ export default function EstimateStatusButton({
   bidStatus: string
 }) {
   const router = useRouter()
-  const [modal, setModal] = useState<"missing" | "start" | null>(null)
+  const [modal, setModal] = useState<"missing" | "start" | "reset" | null>(null)
 
   const state = getState(documents, estimateData, bidStatus)
 
@@ -305,31 +365,54 @@ export default function EstimateStatusButton({
   return (
     <>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.2rem" }}>
-        <button
-          onClick={handleClick}
-          disabled={cfg.disabled}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: "0.45rem",
-            padding: "0.5rem 1.1rem",
-            background: cfg.bg, color: cfg.color,
-            border: `1px solid ${cfg.border}`,
-            borderRadius: "7px", fontSize: "13px", fontWeight: 600,
-            cursor: cfg.disabled ? "not-allowed" : "pointer",
-            fontFamily: "inherit", whiteSpace: "nowrap",
-            opacity: cfg.disabled ? 0.7 : 1,
-            transition: "opacity 0.15s",
-          }}>
-          <span>{cfg.icon}</span>
-          <span>{cfg.label}</span>
-          {state === "clark_draft" && flags > 0 && (
-            <span style={{ fontSize: "11px", background: "rgba(255,255,255,0.25)", padding: "1px 6px", borderRadius: "10px" }}>
-              {flags} flag{flags > 1 ? "s" : ""}
-            </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {/* Reset Estimate — only visible when Clark has already run */}
+          {estimateData !== null && (
+            <button
+              onClick={() => setModal("reset")}
+              title="Reset estimate back to estimating state"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                padding: "0.5rem 0.85rem",
+                background: "transparent", color: "#c0392b",
+                border: "1px solid #c0392b",
+                borderRadius: "7px", fontSize: "13px", fontWeight: 500,
+                cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
+            >
+              🔄 Reset Estimate
+            </button>
           )}
-        </button>
+
+          <button
+            onClick={handleClick}
+            disabled={cfg.disabled}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "0.45rem",
+              padding: "0.5rem 1.1rem",
+              background: cfg.bg, color: cfg.color,
+              border: `1px solid ${cfg.border}`,
+              borderRadius: "7px", fontSize: "13px", fontWeight: 600,
+              cursor: cfg.disabled ? "not-allowed" : "pointer",
+              fontFamily: "inherit", whiteSpace: "nowrap",
+              opacity: cfg.disabled ? 0.7 : 1,
+              transition: "opacity 0.15s",
+            }}>
+            <span>{cfg.icon}</span>
+            <span>{cfg.label}</span>
+            {state === "clark_draft" && flags > 0 && (
+              <span style={{ fontSize: "11px", background: "rgba(255,255,255,0.25)", padding: "1px 6px", borderRadius: "10px" }}>
+                {flags} flag{flags > 1 ? "s" : ""}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Sub-label */}
-        <p style={{ fontSize: "10px", color: "var(--ink-faint)", textAlign: "right", maxWidth: "180px", lineHeight: 1.4 }}>
+        <p style={{ fontSize: "10px", color: "var(--ink-faint)", textAlign: "right", maxWidth: "220px", lineHeight: 1.4 }}>
           {state === "clark_working" && triggeredAt
             ? `Triggered ${new Date(triggeredAt).toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })}`
             : cfg.description}
@@ -345,6 +428,13 @@ export default function EstimateStatusButton({
           dropboxFolder={dropboxFolder}
           onClose={() => setModal(null)}
           onSent={() => { setModal(null); router.refresh() }}
+        />
+      )}
+      {modal === "reset" && (
+        <ResetEstimateModal
+          bidId={bidId}
+          onClose={() => setModal(null)}
+          onReset={() => { setModal(null); router.refresh() }}
         />
       )}
     </>

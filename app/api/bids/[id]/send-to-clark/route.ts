@@ -55,67 +55,10 @@ function isDropboxSharedLink(value: string): boolean {
   return /^https?:\/\/(www\.)?dropbox\.com\//i.test(value)
 }
 
-async function listSharedLinkFolder(linkUrl: string, subPath: string, token: string): Promise<any[]> {
-  const body = { path: subPath, recursive: false, shared_link: { url: linkUrl } }
-  const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) return []
-  const data = await res.json()
-
-  let entries = data.entries ?? []
-  let cursor = data.cursor
-
-  while (data.has_more && cursor) {
-    const nextRes = await fetch("https://api.dropboxapi.com/2/files/list_folder/continue", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ cursor }),
-    })
-    if (!nextRes.ok) break
-    const nextData = await nextRes.json()
-    entries = entries.concat(nextData.entries ?? [])
-    cursor = nextData.cursor
-    if (!nextData.has_more) break
-  }
-
-  return entries
-}
-
 async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
-  if (isDropboxSharedLink(pathOrLink)) {
-    // Shared links don't support recursive=true, so we manually go one level deep
-    const rootEntries = await listSharedLinkFolder(pathOrLink, "", token)
-    const rootFiles = rootEntries.filter((entry: any) => entry[".tag"] === "file")
-    console.log(`[CLARK] Found ${rootFiles.length} files in folder /`)
-    let allEntries: any[] = []
-
-    for (const entry of rootEntries) {
-      if (entry[".tag"] === "file") {
-        allEntries.push(entry)
-      } else if (entry[".tag"] === "folder") {
-        // Go one level into each subfolder (Bid Documents, Drawings, Hazmat, etc.)
-        const folderPath = entry.path_display ?? `/${entry.name}`
-        const subEntries = await listSharedLinkFolder(pathOrLink, folderPath, token)
-        const subFiles = subEntries.filter((e: any) => e[".tag"] === "file")
-        console.log(`[CLARK] Found ${subFiles.length} files in folder ${folderPath}`)
-        allEntries = allEntries.concat(subFiles)
-      }
-    }
-
-    return allEntries
-  }
-
-  // Direct path — recursive works fine
-  const body = { path: pathOrLink, recursive: true }
+  const body = isDropboxSharedLink(pathOrLink)
+    ? { path: "", recursive: false, shared_link: { url: pathOrLink } }
+    : { path: pathOrLink, recursive: true }
 
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
     method: "POST",
@@ -146,9 +89,6 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
     cursor = nextData.cursor
     if (!nextData.has_more) break
   }
-
-  const directFiles = entries.filter((entry: any) => entry[".tag"] === "file")
-  console.log(`[CLARK] Found ${directFiles.length} files in folder ${pathOrLink || "/"}`)
 
   return entries
 }
@@ -157,44 +97,6 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
 
 const SUPPORTED_EXTS = [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".txt", ".csv"]
 const MAX_FILE_SIZE  = 20 * 1024 * 1024 // 20MB
-
-function isDemoRelevant(filename: string, pathDisplay?: string): boolean {
-  const lc = filename.toLowerCase()
-  const ext = lc.split('.').pop() ?? ''
-
-  // Always include images (site photos) and text files
-  if (['jpg','jpeg','png','gif','webp','txt','csv','xlsx','xls'].includes(ext)) return true
-
-  // For non-PDFs that aren't images, include by default
-  if (ext !== 'pdf') return true
-
-  // For PDFs: check path context first
-  if (pathDisplay) {
-    const pd = pathDisplay.toLowerCase()
-    // Always include if in Hazmat or Bid Documents folder
-    if (pd.includes('/hazmat/') || pd.includes('/bid documents/') || pd.includes('/bid docs/')) return true
-    // Exclude if in clearly irrelevant folders
-    if (pd.includes('/electrical/') || pd.includes('/mechanical/') || pd.includes('/plumbing/')) return false
-  }
-
-  // Check filename for relevant keywords
-  const relevant = ['demo', 'demolition', 'rcp', 'reflected ceiling', 'hazmat', 'hazardous',
-    'asbestos', 'abatement', 'survey', 'scope', 'ift', 'tender', 'rfp', 'instruction',
-    'spec', 'addend', 'invitation']
-  if (relevant.some(k => lc.includes(k))) return true
-
-  // Exclude clearly irrelevant PDF drawing types by prefix
-  const irrelevantPrefixes = ['e-', 'elec-', 'm-', 'mech-', 'p-', 'plumb-', 'fp-', 'id-', 'c-', 'l-', 'str-']
-  const basename = lc.split('/').pop() ?? lc
-  if (irrelevantPrefixes.some(p => basename.startsWith(p))) {
-    // But include if it also mentions demo
-    if (lc.includes('demo')) return true
-    return false
-  }
-
-  // Default: include unknown PDFs (better to over-include than miss docs)
-  return true
-}
 
 function getMediaType(filename: string): string {
   const ext = filename.toLowerCase().split(".").pop() ?? ""
@@ -485,7 +387,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 
   // Collect files to analyze
-  let filesToAnalyze: { filename: string; dropboxPath: string; pathDisplay?: string }[] = []
+  const filesToAnalyze: { filename: string; dropboxPath: string }[] = []
   const bidDocs: { name: string; url: string; type: string }[] = documents ?? bid.documents ?? []
 
   for (const doc of bidDocs) {
@@ -494,8 +396,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         const subEntries = await listFolderRecursive(doc.url, token)
         for (const entry of subEntries) {
           if (entry[".tag"] === "file" && isSupported(entry.name)) {
-            if (!entry.id) continue
-            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id, pathDisplay: entry.path_display ?? "" })
+            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
           }
         }
       } catch {
@@ -512,22 +413,17 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       const entries = await listFolderRecursive(folder, token)
       for (const entry of entries) {
         if (entry[".tag"] === "file" && isSupported(entry.name)) {
-          if (!entry.id) continue
-          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id, pathDisplay: entry.path_display ?? "" })
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
         }
       }
     } catch {}
   }
 
-  // Filter to demo-relevant files only (skip electrical, mechanical, finish plans, etc.)
-  filesToAnalyze = filesToAnalyze.filter(f => isDemoRelevant(f.filename, f.pathDisplay))
-  console.log("[CLARK] Files after demo filter:", filesToAnalyze.map(f => f.filename))
-
-  // Download and encode files (max 15, 20MB each)
+  // Download and encode files (max 10, 20MB each)
   const docPayloads: { filename: string; mediaType: string; base64: string }[] = []
   const errors: string[] = []
 
-  for (const file of filesToAnalyze.slice(0, 15)) {
+  for (const file of filesToAnalyze.slice(0, 10)) {
     try {
       const link = await getTemporaryLink(file.dropboxPath, token)
       if (!link) { errors.push(`No link for ${file.filename}`); continue }

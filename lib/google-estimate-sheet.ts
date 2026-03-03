@@ -122,15 +122,15 @@ export async function createClarkEstimateSheet(
   const HEADER_ROW = addRow([
     "Phase Code", "Work Class", "Work Activity",
     "Total Units", "Units/Day", "Man Days",
-    "Cost/Man Day", "Labour", "Material 10%", "Material Cost",
+    "Cost/Man Day", "Labour", "Material 18%", "Material Cost",
     "Total Cost", "Overhead 12%", "Profit 30%", "Total", "$/Unit", "Notes",
   ])
   // Row 4: Rates (referenced by line items via absolute refs)
   const RATES_ROW = addRow([
     "", "", "RATES", "", "", "",
-    "", 296, 0.10, "", "", 0.12, 0.30, "", "", "",
+    296, "", 0.18, "", "", 0.12, 0.30, "", "", "",
   ])
-  // G4 = 296 (Cost/Man Day), I4 = 0.10 (Material), L4 = 0.12 (Overhead), M4 = 0.30 (Profit)
+  // G4 = 296 (Cost/Man Day), I4 = 0.18 (Material), L4 = 0.12 (Overhead), M4 = 0.30 (Profit)
 
   // === LINE ITEMS (Row 5+) ===
   const LINE_ITEMS_START = values.length + 1
@@ -369,7 +369,7 @@ export async function createClarkEstimateSheet(
     // ── Currency: G4 (rate $296)
     {
       repeatCell: {
-        range: rowRange(RATES_ROW, 7, 8),
+        range: rowRange(RATES_ROW, 6, 7),
         cell: { userEnteredFormat: { numberFormat: currencyFmt } },
         fields: "userEnteredFormat(numberFormat)",
       },

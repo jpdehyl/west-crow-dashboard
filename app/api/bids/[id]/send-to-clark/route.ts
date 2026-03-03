@@ -55,10 +55,62 @@ function isDropboxSharedLink(value: string): boolean {
   return /^https?:\/\/(www\.)?dropbox\.com\//i.test(value)
 }
 
+async function listSharedLinkFolder(linkUrl: string, subPath: string, token: string): Promise<any[]> {
+  const body = { path: subPath, recursive: false, shared_link: { url: linkUrl } }
+  const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+
+  let entries = data.entries ?? []
+  let cursor = data.cursor
+
+  while (data.has_more && cursor) {
+    const nextRes = await fetch("https://api.dropboxapi.com/2/files/list_folder/continue", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cursor }),
+    })
+    if (!nextRes.ok) break
+    const nextData = await nextRes.json()
+    entries = entries.concat(nextData.entries ?? [])
+    cursor = nextData.cursor
+    if (!nextData.has_more) break
+  }
+
+  return entries
+}
+
 async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
-  const body = isDropboxSharedLink(pathOrLink)
-    ? { path: "", recursive: false, shared_link: { url: pathOrLink } }
-    : { path: pathOrLink, recursive: true }
+  if (isDropboxSharedLink(pathOrLink)) {
+    // Shared links don't support recursive=true, so we manually go one level deep
+    const rootEntries = await listSharedLinkFolder(pathOrLink, "", token)
+    let allEntries: any[] = []
+
+    for (const entry of rootEntries) {
+      if (entry[".tag"] === "file") {
+        allEntries.push(entry)
+      } else if (entry[".tag"] === "folder") {
+        // Go one level into each subfolder (Bid Documents, Drawings, Hazmat, etc.)
+        const subEntries = await listSharedLinkFolder(pathOrLink, entry.path_lower ?? ("/" + entry.name), token)
+        allEntries = allEntries.concat(subEntries.filter((e: any) => e[".tag"] === "file"))
+      }
+    }
+
+    return allEntries
+  }
+
+  // Direct path — recursive works fine
+  const body = { path: pathOrLink, recursive: true }
 
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
     method: "POST",

@@ -55,18 +55,41 @@ function isDropboxSharedLink(value: string): boolean {
   return /^https?:\/\/(www\.)?dropbox\.com\//i.test(value)
 }
 
-async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
-  const body = isDropboxSharedLink(pathOrLink)
-    ? { path: "", recursive: false, shared_link: { url: pathOrLink } }
-    : { path: pathOrLink, recursive: true }
+async function listSharedLinkFolder(sharedLinkUrl: string, relativePath: string, token: string): Promise<any[]> {
+  // relativePath is relative to the shared link root, e.g. "" for root, "/Drawings" for subfolder
+  const body: any = { shared_link: { url: sharedLinkUrl }, recursive: false }
+  if (relativePath) body.path = relativePath
 
   const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  const raw: any[] = data.entries ?? []
+
+  // Collect files, recurse into folders using relative paths
+  let files = raw.filter((e: any) => e[".tag"] === "file")
+  const folders = raw.filter((e: any) => e[".tag"] === "folder")
+
+  for (const folder of folders) {
+    const subRelPath = relativePath ? `${relativePath}/${folder.name}` : `/${folder.name}`
+    const subEntries = await listSharedLinkFolder(sharedLinkUrl, subRelPath, token)
+    files = files.concat(subEntries)
+  }
+  return files
+}
+
+async function listFolderRecursive(pathOrLink: string, token: string): Promise<any[]> {
+  if (isDropboxSharedLink(pathOrLink)) {
+    return listSharedLinkFolder(pathOrLink, "", token)
+  }
+
+  const res = await fetch("https://api.dropboxapi.com/2/files/list_folder", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ path: pathOrLink, recursive: true }),
   })
   if (!res.ok) return []
   const data = await res.json()
@@ -77,10 +100,7 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
   while (data.has_more && cursor) {
     const nextRes = await fetch("https://api.dropboxapi.com/2/files/list_folder/continue", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ cursor }),
     })
     if (!nextRes.ok) break

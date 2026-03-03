@@ -98,6 +98,52 @@ async function listFolderRecursive(pathOrLink: string, token: string): Promise<a
 const SUPPORTED_EXTS = [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".txt", ".csv"]
 const MAX_FILE_SIZE  = 20 * 1024 * 1024 // 20MB
 
+function isDemoRelevant(filename: string, pathDisplay?: string): boolean {
+  const lc = filename.toLowerCase()
+  const pathLc = (pathDisplay ?? "").toLowerCase()
+
+  // Always include files in Hazmat or Bid Documents folders
+  if (pathLc.includes("/hazmat/") || pathLc.includes("/bid documents/")) return true
+
+  // Always include non-drawing docs (scope letters, hazmat, etc.)
+  if (lc.includes("scope") || lc.includes("ift") || lc.includes("tender") ||
+      lc.includes("rfp") || lc.includes("instructions")) return true
+  if (lc.includes("hazmat") || lc.includes("hazardous") || lc.includes("asbestos") ||
+      lc.includes("pha") || lc.includes("abatement") || lc.includes("survey")) return true
+
+  // Always include demo/demolition drawings
+  if (lc.includes("demo") || lc.includes("demolition")) return true
+  // d-1, d-2, d1., d2., d3. patterns
+  if (/\bd-\d/.test(lc) || /\bd\d+\./.test(lc)) return true
+  if (lc.includes("rcp") || lc.includes("reflected ceiling") ||
+      lc.includes("rc-") || lc.includes("ceiling demo")) return true
+
+  // Filter out known-irrelevant drawing types
+
+  // Electrical: starts with "e-" or "elec" or contains "electrical"
+  if (/^e-/.test(lc) || /^elec/.test(lc) || lc.includes("electrical")) return false
+
+  // Mechanical/HVAC/Plumbing: starts with "m-", "mech", "p-" or contains keywords
+  if (/^m-/.test(lc) || /^mech/.test(lc) || lc.includes("mechanical") ||
+      lc.includes("hvac") || lc.includes("plumbing") || /^p-/.test(lc)) return false
+
+  // Finish/Interior design
+  if (lc.includes("finish") || lc.includes("fp-") || lc.includes("interior design") ||
+      lc.includes("id-") || lc.includes("furniture") || lc.includes("ffl")) return false
+
+  // Structural (demo already returned true above, so these are non-demo structural)
+  if (/^s-/.test(lc) || /^str-/.test(lc)) return false
+
+  // Civil
+  if (/^c-/.test(lc) || lc.includes("civil")) return false
+
+  // Landscape
+  if (/^l-/.test(lc) || lc.includes("landscape")) return false
+
+  // When uncertain, INCLUDE (don't over-filter)
+  return true
+}
+
 function getMediaType(filename: string): string {
   const ext = filename.toLowerCase().split(".").pop() ?? ""
   const map: Record<string, string> = {
@@ -387,7 +433,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 
   // Collect files to analyze
-  const filesToAnalyze: { filename: string; dropboxPath: string }[] = []
+  let filesToAnalyze: { filename: string; dropboxPath: string; pathDisplay?: string }[] = []
   const bidDocs: { name: string; url: string; type: string }[] = documents ?? bid.documents ?? []
 
   for (const doc of bidDocs) {
@@ -396,7 +442,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         const subEntries = await listFolderRecursive(doc.url, token)
         for (const entry of subEntries) {
           if (entry[".tag"] === "file" && isSupported(entry.name)) {
-            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
+            filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display, pathDisplay: entry.path_display ?? "" })
           }
         }
       } catch {
@@ -413,17 +459,21 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       const entries = await listFolderRecursive(folder, token)
       for (const entry of entries) {
         if (entry[".tag"] === "file" && isSupported(entry.name)) {
-          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display })
+          filesToAnalyze.push({ filename: entry.name, dropboxPath: entry.id ?? entry.path_display, pathDisplay: entry.path_display ?? "" })
         }
       }
     } catch {}
   }
 
-  // Download and encode files (max 10, 20MB each)
+  // Filter to demo-relevant files only (skip electrical, mechanical, finish plans, etc.)
+  filesToAnalyze = filesToAnalyze.filter(f => isDemoRelevant(f.filename, f.pathDisplay))
+  console.log("[CLARK] Files after demo filter:", filesToAnalyze.map(f => f.filename))
+
+  // Download and encode files (max 15, 20MB each)
   const docPayloads: { filename: string; mediaType: string; base64: string }[] = []
   const errors: string[] = []
 
-  for (const file of filesToAnalyze.slice(0, 10)) {
+  for (const file of filesToAnalyze.slice(0, 15)) {
     try {
       const link = await getTemporaryLink(file.dropboxPath, token)
       if (!link) { errors.push(`No link for ${file.filename}`); continue }

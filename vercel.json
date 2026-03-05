@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/sync/dropbox",  "schedule": "0 8 * * *" },
-    { "path": "/api/sync/calendar", "schedule": "0 8 * * *" }
+    { "path": "/api/sync/dropbox",     "schedule": "0 8 * * *" },
+    { "path": "/api/sync/calendar",    "schedule": "0 8 * * *" },
+    { "path": "/api/sync/quickbooks",  "schedule": "0 9 * * *" }
   ]
 }
